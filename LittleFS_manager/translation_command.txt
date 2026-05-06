@@ -1,0 +1,2 @@
+
+python -m PyInstaller --noconsole --onefile LittleFS_manager.py

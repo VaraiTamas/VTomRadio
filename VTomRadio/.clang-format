@@ -1,0 +1,56 @@
+---
+AccessModifierOffset: -2          # A public/protected/private kulcsszavak behúzásának eltolása
+IndentWidth: 4                    # Behúzás mérete szóközökben
+ReflowComments: true              # Kommentek automatikus újratördelése
+PointerAlignment: Left            # Mutatók (*) bal oldalra igazítása (int* p)
+SpaceAfterLogicalNot: false       # Ne legyen szóköz a logikai NOT (!) után
+SpaceBeforeAssignmentOperators: true # Legyen szóköz az értékadás előtt és után (=)
+SpaceInEmptyParentheses: false    # Ne legyen szóköz az üres zárójelekben ()
+SpacesInParentheses: false        # Ne legyen szóköz a zárójeleken belül
+UseTab: Never                     # Soha ne használjon tabulátort, csak szóközt
+IndentPPDirectives: AfterHash    # Preprocesszor direktívák (#include) igazítása a # előtt
+IndentCaseLabels: true            # case címkék behúzása switch-ben
+IncludeBlocks: Merge              # Include blokkok közül kiveszi az üres sorokat
+SortIncludes: false               # Az incloude -kat nem rendezi névsorba
+Cpp11BracedListStyle: true        # C++11 stílusú inicializáló listák használata
+
+ColumnLimit: 200                  # Maximális sorhossz (0 = korlátlan)
+BinPackArguments: true            # Függvényhívás argumentumainak egy sorba tömörítése
+BinPackParameters: true           # Függvénydeklaráció paramétereinek egy sorba tömörítése
+AllowShortBlocksOnASingleLine: true # Rövid { } blokkok egy sorban engedélyezettek
+AllowShortCaseLabelsOnASingleLine: true # Rövid case ágak egy sorban
+AllowShortFunctionsOnASingleLine: Inline # Rövid függvények egy sorban (inline esetén)
+AllowShortIfStatementsOnASingleLine: WithoutElse # Rövid if egy sorban, de csak else nélkül
+BreakBeforeBraces: Attach         # Kapcsos zárójel a sor végére kerül
+SpaceBeforeParens: ControlStatements # Szóköz a zárójel előtt vezérlőutasításoknál (if, for)
+
+AllowShortEnumsOnASingleLine: true # Rövid enumok egy sorban
+AllowShortLambdasOnASingleLine: All # Rövid lambda kifejezések egy sorban
+AllowShortLoopsOnASingleLine: true # Rövid for/while ciklusok egy sorban
+AllowAllParametersOfDeclarationOnNextLine: false # Ne vigye az összes paramétert új sorba
+AllowAllArgumentsOnNextLine: false # Ne vigye az összes argumentumot új sorba
+
+AlignTrailingComments: true       # Sorvégi kommentek egymáshoz igazítása
+AlignEscapedNewlines: Left        # Backslash-sel tördel sorokat balra igazítva
+AlignConsecutiveDeclarations: true # Egymás utáni változódeklarációk igazítása
+AlignConsecutiveMacros: true      # Egymás utáni makrók igazítása
+AlignAfterOpenBracket: Align      # Nyitó zárójel utáni elemek igazítása
+SortUsingDeclarations: true       # using deklarációk automatikus rendezése
+
+BraceWrapping:
+  AfterCaseLabel:  false          # case után ne legyen külön sorban a {
+  AfterClass:      false          # class után ne törjön sort a {
+  AfterControlStatement: true     # if/for/while után külön sorba kerül a {
+  AfterEnum:       false          # enum után ne törjön sort
+  AfterFunction:   false          # függvény után ne törjön sort
+  AfterNamespace:  false          # namespace után ne törjön sort
+  AfterObjCDeclaration: false     # Objective-C deklarációknál ne törjön sort
+  AfterStruct:     false          # struct után ne törjön sort
+  AfterUnion:      false          # union után ne törjön sort
+  AfterExternBlock: false         # extern blokk után ne törjön sort
+  BeforeCatch:     false          # catch elé ne tegyen külön sort
+  BeforeElse:      true           # else előtt legyen sortörés
+  IndentBraces:    false          # Kapcsos zárójelek ne legyenek külön behúzva
+  SplitEmptyFunction: false       # Üres függvényeket ne bontsa több sorra
+  SplitEmptyRecord: false         # Üres struct/class ne legyen több soros
+  SplitEmptyNamespace: false      # Üres namespace ne legyen több soros

@@ -1,0 +1,20 @@
+#pragma once
+
+#define RTCSUPPORTED (RTC_SDA != 255 && RTC_SCL != 255 && (RTC_MODULE == DS3231))
+
+#if RTCSUPPORTED
+    #include "RTClib.h"
+
+    #if RTC_MODULE == DS3231
+class RTC : public RTC_DS3231 {
+    #else
+        #error ONLY DS3231 MODULE SUPPORTED
+    #endif
+  public:
+    bool init();
+    bool isRunning();
+    void getTime(struct tm* tinfo);
+    void setTime(struct tm* tinfo);
+};
+extern RTC rtc;
+#endif

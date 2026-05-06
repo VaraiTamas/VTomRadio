@@ -1,0 +1,6 @@
+/*
+ *    VTomRadio based on
+ *    ESP32-audioI2S     https://github.com/schreibfaul1/ESP32-audioI2S
+ *    or/and
+ *    Project home       https://github.com/VaraiTamas/yoRadio.git
+ */

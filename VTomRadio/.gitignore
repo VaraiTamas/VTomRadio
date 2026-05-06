@@ -1,0 +1,6 @@
+.pio
+.vscode
+
+# Local WiFi credentials (do not commit)
+data/data/wifi.csv
+

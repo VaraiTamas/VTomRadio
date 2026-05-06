@@ -1,0 +1,18 @@
+#pragma once
+
+#include "widget.h"
+#include "bitrateWidget.h"
+#include "clockWidget.h"
+#include "fillWidget.h"
+#include "imageWidget.h"
+#include "namedayWidget.h"
+#include "numWidget.h"
+#include "playListWidget.h"
+#include "progressWidget.h"
+#include "scrollWidget.h"
+#include "sliderWidget.h"
+#include "textBoxWidget.h"
+#include "textWidget.h"
+#include "volumeWidget.h"
+#include "vuWidget.h"
+#include "wifiWidget.h"
