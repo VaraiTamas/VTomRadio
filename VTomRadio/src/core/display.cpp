@@ -14,9 +14,9 @@
 #include "../displays/widgets/widgets.h"
 #include "../displays/widgets/pages.h"
 #include "../displays/tools/language.h"
-#include "core/fonts.h"
-#include "core/serial_littlefs.h"
-#include "core/touchscreen.h"
+#include "fonts.h"
+#include "serial_littlefs.h"
+#include "touchscreen.h"
 // #define LGFX_USE_PNG
 
 Display display;
@@ -306,7 +306,12 @@ void Display::_start() {
     _mode = PLAYER;
     config.setTitle(LANG::const_PlReady);
 
-    if (_heapbar) { _heapbar->lock(!config.store.audioinfo); }
+    _pager->setPage(pages[PG_PLAYER]);
+
+    if (_heapbar) {
+        _heapbar->lock(!config.store.audioinfo);
+        if (config.store.audioinfo) { _heapbar->setValue(player.inBufferFilled()); }
+    }
 
     if (_weather) { _weather->lock(!config.store.showweather); }
     if (_weather && config.store.showweather) { _weather->setText(LANG::const_getWeather); } // Üres string.
@@ -323,7 +328,6 @@ void Display::_start() {
 #    ifndef HIDE_IP
     if (_ipbox) { _ipbox->setText(config.ipToStr(WiFi.localIP()), iptxtFmt); }
 #    endif
-    _pager->setPage(pages[PG_PLAYER]);
     _volume();
     _station();
     _time(false);

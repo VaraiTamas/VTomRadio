@@ -368,14 +368,13 @@ void TimeKeeper::_upRSSI() {
     if (network.status == CONNECTED) {
         netserver.setRSSI(WiFi.RSSI());
         netserver.requestOnChange(NRSSI, 0);
+        if (display.ready()) { display.putRequest(DSPRSSI, netserver.getRSSI()); }
 /*        
 // léptető teszt
         static int fakeRssi = -100;
         netserver.setRSSI(fakeRssi);
         fakeRssi += 10;
         if (fakeRssi > -10) fakeRssi = -100;
-
-        if (display.ready()) { display.putRequest(DSPRSSI, netserver.getRSSI()); }
 */
     }
 #ifdef USE_SD
