@@ -24,7 +24,8 @@ Főbb változtatások:
 ## Telepitesi tanacsok
 !!! Figyelem !!!
 Ez a verzió kizárólag az ESP32-S3-devkit-C1 N16R8, 44 lábú modulhoz és
-- ILI9488 480x320 felbontású SPI (LCD)  
+- ILI9488 480x320 felbontású SPI (LCD) 
+- ST7796 480x320 felbontású SPI (LCD)   
 kijelzőhöz készült és csak az audioI2S DAC eszközzel működik megfelelően, [PCM5102A](PCM5102A) -val tesztelve!
 - A program működéséhez 16MB flash memória és 8MB PSRAM szükséges!
 
