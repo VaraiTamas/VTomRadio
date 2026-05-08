@@ -20,7 +20,7 @@
 #endif
 #include "core/audiohandlers.h" //"audio_change"
 #ifdef USE_DLNA                 // DLNA mod
-#    include "network/dlna_service.h"
+#    include "dlna/dlna_service.h"
 #endif
 #if USE_OTA
 #    if ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(3, 0, 0)
@@ -29,10 +29,6 @@
 #        include <WiFiUdp.h>
 #    endif
 #    include <ArduinoOTA.h>
-#endif
-
-#if DSP_HSPI || TS_HSPI || VS_HSPI
-SPIClass SPI2(HSPI);
 #endif
 
 extern __attribute__((weak)) void radio_on_setup();
@@ -157,6 +153,7 @@ serial_littlefs_begin(Serial);   //Botfai Tibor: sor hozzáadva a serial_littlef
     pm.on_setup(); // pluginsManager
     config.init();
     display.init();
+
     player.init();
     network.begin();
     if (network.status != CONNECTED && network.status != SDREADY) {

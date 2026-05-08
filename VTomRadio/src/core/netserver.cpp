@@ -15,8 +15,8 @@
 #include "../displays/widgets/widgetsconfig.h"
 
 #ifdef USE_DLNA  //DLNA mod
-  #include "../network/dlna_index.h"
-  #include "../network/dlna_service.h"
+  #include "../dlna/dlna_index.h"
+  #include "../dlna/dlna_service.h"
 #endif
 
 #if DSP_MODEL == DSP_DUMMY
@@ -569,6 +569,7 @@ bool NetServer::begin(bool quiet) {
         return;
       }
 
+      display.invalidateThemeWidgets();
       display.putRequest(NEWMODE, CLEAR);
       display.putRequest(NEWMODE, PLAYER);
 
@@ -628,6 +629,9 @@ bool NetServer::begin(bool quiet) {
 
       displayMode_e currentMode = display.mode();
       if (currentMode == CLEAR) { currentMode = PLAYER; }
+
+      display.invalidateThemeWidgets();
+
       display.putRequest(NEWMODE, CLEAR);
       display.putRequest(NEWMODE, currentMode);
 

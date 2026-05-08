@@ -2,10 +2,10 @@
 #define options_h
 #pragma once
 
-#define FW_VERSION "0.0.1"
+#define FW_VERSION "0.0.2"
 
 #ifndef THEME_CSV_VERSION
-#define THEME_CSV_VERSION "0.0.1"
+#    define THEME_CSV_VERSION "0.0.1"
 #endif
 
 /*******************************************************
@@ -18,21 +18,21 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
 #    include "../../myoptions.h" /* <- write your variable values here */
 #endif
 
-#    if __has_include("../../mytheme.h")
-#        include "../../mytheme.h" /* <- Theme file */
-#    endif
+#if __has_include("../../mytheme.h")
+#    include "../../mytheme.h" /* <- Theme file */
+#endif
 
 #if __has_include("../../mqttoptions.h")
 #    include "../../mqttoptions.h"
 #endif
 
 #ifndef BOOTLOG
-#define BOOTLOG(...)                            \
-  do {                                        \
-    char _bootlog_buf[120];                 \
-    snprintf(_bootlog_buf, sizeof(_bootlog_buf), __VA_ARGS__); \
-    Serial.printf("##[BOOT]#\t%s\n", _bootlog_buf);          \
-  } while (0)
+#    define BOOTLOG(...)                                               \
+        do {                                                           \
+            char _bootlog_buf[120];                                    \
+            snprintf(_bootlog_buf, sizeof(_bootlog_buf), __VA_ARGS__); \
+            Serial.printf("##[BOOT]#\t%s\n", _bootlog_buf);            \
+        } while (0)
 #endif
 
 // clang-format off
@@ -47,7 +47,6 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
 #define DSP_SSD1305I2C  16    // 128x64   2.4'  SSD1305 and SSD1309 I2C https://aliexpress.com/item/32950307344.html
 #define DSP_ILI9225     17    // 220x176  2.0'  https://aliexpress.com/item/32952021835.html
 #define DSP_ST7789_240  18    // 240x240  1.3'  https://aliexpress.com/item/32996979276.html
-/* !!! DSP_ST7789_240 requires further development when used in conjunction with the VS1053 module !!! See the link https://www.instructables.com/Adding-CS-Pin-to-13-LCD/ */
 #define DSP_ST7796      19    // 480x320  3.5'  https://aliexpress.com/item/1005004632953455.html?sku_id=12000029911293172
 #define DSP_GC9A01A     20    // 240x240  1.28' https://aliexpress.com/item/1005004069703494.html?sku_id=12000029869654615
 #define DSP_ILI9488     21    // 480x320  3.5'  https://aliexpress.com/item/1005001999296476.html?sku_id=12000018365356570
@@ -59,32 +58,50 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
 #define DSP_2002I2C     27    // 20x2           https://aliexpress.com/item/32812259852.html
 #define DSP_ST7789_170  28    // 320x170  1.9'  https://aliexpress.com/item/1005008723378017.html
 
+#define TS_MODEL_UNDEFINED      0
+#define TS_MODEL_XPT2046        1
+#define TS_MODEL_GT911          2
+#define TS_MODEL_FT6X36         3
+#define TS_MODEL_AXS15231B      4
+
 #ifndef DSP_MODEL
   #define DSP_MODEL  DSP_DUMMY
 #endif
-#ifndef DSP_HSPI
-  #define DSP_HSPI   false      // use HSPI for displays (miso=12, mosi=13, clk=14) instead of VSPI (by default)
-#endif
+
 #ifndef LED_INVERT
   #define LED_INVERT   false      // invert onboard LED?
 #endif
+
 #ifndef POWER_LED
   #define POWER_LED 255      // Button LED pin (will be turned on when player is on)
 #endif
 
+
 /*        TFT DISPLAY             */
+#ifndef DEFAULT_SCREEN_ROTATION
+  #if DSP_MODEL == DSP_ST7796
+    #define DEFAULT_SCREEN_ROTATION 3
+  #elif DSP_MODEL == DSP_ILI9488
+    #define DEFAULT_SCREEN_ROTATION 1
+  #else
+    #define DEFAULT_SCREEN_ROTATION 1
+  #endif
+#endif
+
+#ifndef LGFX_LCD_SPI_HOST
+  #define LGFX_LCD_SPI_HOST     2  // 1=HSPI, 2=VSPI (ESP32 only)
+#endif
+
+#ifndef TFT_DC
+  #define TFT_DC        9
+#endif
 #ifndef TFT_CS
-  #define TFT_CS        5
+  #define TFT_CS        10
 #endif
 #ifndef TFT_RST
   #define TFT_RST       -1   // Or set to -1 and connect to Esp EN pin
 #endif
-#ifndef TFT_DC
-  #define TFT_DC        4
-#endif
-#ifndef USE_FBUFFER
-  #define USE_FBUFFER     true
-#endif
+
 /*        NEXTION                 */
 #ifndef NEXTION_RX
   #define NEXTION_RX    255
@@ -106,32 +123,15 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
   #define I2C_RST -1
 #endif
 
-/*        VS1053                  */
-#ifndef VS1053_CS
-  #define VS1053_CS     255 // 27
-#endif
-#ifndef VS1053_DCS
-  #define VS1053_DCS    25
-#endif
-#ifndef VS1053_DREQ
-  #define VS1053_DREQ   26
-#endif
-#ifndef VS1053_RST
-  #define VS1053_RST    -1    // set to -1 if connected to Esp EN pin
-#endif
-#ifndef VS_HSPI
-  #define VS_HSPI   false      // use HSPI for VS1053 (miso=12, mosi=13, clk=14) instead of VSPI (by default)
-#endif
-
 /*        I2S DAC                 */
 #ifndef I2S_DOUT
-  #define I2S_DOUT      27  // DIN connection
+  #define I2S_DOUT      4  // DIN connection
 #endif
 #ifndef I2S_BCLK
-  #define I2S_BCLK      26  // BCLK Bit clock
+  #define I2S_BCLK      5  // BCLK Bit clock
 #endif
 #ifndef I2S_LRC
-  #define I2S_LRC       25  // WSEL Left Right Clock
+  #define I2S_LRC       6  // WSEL Left Right Clock
 #endif
 #ifndef I2S_MCLK
   #define I2S_MCLK      -1  // MCLK (Master Clock) - only needed for DACs like CS4344; -1 = unused
@@ -140,9 +140,6 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
 /*        SDCARD                  */
 #ifndef SDC_CS
   #define SDC_CS        255  // SDCARD CS pin
-#endif
-#ifndef SD_HSPI
-  #define SD_HSPI       false  // use HSPI for SD (miso=12, mosi=13, clk=14) instead of VSPI (by default)
 #endif
 #if SDC_CS!=255
   #define USE_SD
@@ -213,12 +210,6 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
 #endif
 
 /*        TOUCH SCREEN            */
-#define TS_MODEL_UNDEFINED      0
-#define TS_MODEL_XPT2046        1
-#define TS_MODEL_GT911          2
-#define TS_MODEL_FT6X36         3
-#define TS_MODEL_AXS15231B      4
-
 #ifndef TS_MODEL
   #define TS_MODEL              TS_MODEL_UNDEFINED
 #endif
@@ -236,11 +227,13 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
   #define TS_INT                17
 #endif
 #ifndef TS_RST
-  #define TS_RST                42
+  #define TS_RST                255
 #endif
-
-#ifndef TS_HSPI
-  #define TS_HSPI   false      // use HSPI for touchscreen (miso=12, mosi=13, clk=14) instead of VSPI (by default)
+#ifndef TS_I2C_PORT
+  #define TS_I2C_PORT           0
+#endif
+#ifndef TS_I2C_ADDR
+  #define TS_I2C_ADDR           0x38
 #endif
 
 /*        LCD DISPLAY            */
@@ -328,6 +321,7 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
 #ifndef ROTATE_90
   #define ROTATE_90         false  // Optional 90 degree rotation for square displays
 #endif
+
 #ifndef LIGHT_SENSOR
   #define LIGHT_SENSOR  255   // Light sensor
 #endif
@@ -551,7 +545,7 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
 #ifndef COLOR_VU_MAX
   #define COLOR_VU_MAX            231, 211,  90
 #endif
-#ifndef COLOR_VU_MID                                // Módosítás: új bejegyzés "vu_meter"
+#ifndef COLOR_VU_MID
   #define COLOR_VU_MID            255, 255, 0
 #endif
 #ifndef COLOR_VU_MIN

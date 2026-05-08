@@ -244,4 +244,12 @@ void WifiWidget::setRSSI(int32_t rssi) {
     setStrength(_rssiToStrength(rssi));
 }
 
+void WifiWidget::invalidate() {
+    if (!_active || _locked) { return; }
+
+    // Force redraw with new colors - bypass setStrength() early return
+    _dirty = true;
+    _draw();
+}
+
 #endif

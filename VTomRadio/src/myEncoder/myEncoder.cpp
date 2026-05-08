@@ -121,7 +121,10 @@ long myEncoder::encoderChanged()
 	long encoder0Diff = _encoder0Pos - this->lastReadEncoder0Pos;
 
 	this->lastReadEncoder0Pos = _encoder0Pos;
-
+	if (encoder0Diff > 1)
+		return 1;
+	if (encoder0Diff < -1)
+		return -1;
 	return encoder0Diff;
 }
 

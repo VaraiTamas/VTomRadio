@@ -124,8 +124,6 @@ void Display::init() {
     analogWrite(BRIGHTNESS_PIN, config.store.dspon ? map(config.store.brightness, 0, 100, 0, 255) : 0);
 #    endif
 
-    LittleFS.begin(true);
-
     if (!loadFonts()) {
         Serial.println("[FONT] HIBA: Egy vagy tobb kotelezo font hianyzik a LittleFS-rol!");
     } else {
@@ -440,7 +438,7 @@ void Display::_swichMode(displayMode_e newmode) {
     if (newmode == SDCHANGE) { _showDialog(LANG::const_waitForSD); }
     if (newmode == INFO || newmode == SETTINGS || newmode == TIMEZONE || newmode == WIFI) { _showDialog(LANG::const_DlgNextion); }
     if (newmode == NUMBERS) { _showDialog(""); }
-#    if DSP_MODEL == DSP_ILI9488
+#    if (DSP_MODEL == DSP_ILI9488) || (DSP_MODEL == DSP_ST7796)
     if (newmode == PRESETS) {
         _pager->setPage(pages[PG_PRESETS], true);
         presets_drawScreen();
@@ -508,6 +506,11 @@ void Display::applyVuModeChange() {
     if (!_vuwidget) { return; }
     _vuwidget->switchMode(config.store.vuBidirectional);
     _layoutChange(player.isRunning());
+}
+
+void Display::invalidateThemeWidgets() {
+    if (!_wifiwidget || _locked) { return; }
+    _wifiwidget->invalidate();
 }
 
 void Display::loop() {

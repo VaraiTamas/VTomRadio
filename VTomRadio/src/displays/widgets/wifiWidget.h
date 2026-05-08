@@ -11,7 +11,6 @@
 
 class WifiWidget : public Widget {
   public:
-    // 🔥 EZ KELL NEKED
     WifiWidget(yoDisplay* dsp, const WifiWidgetConfig& cfg);
     WifiWidget(yoDisplay* dsp, const WifiWidgetConfig* cfg); // PROGMEM-hez
 
@@ -19,6 +18,7 @@ class WifiWidget : public Widget {
 
     void setStrength(int8_t s);
     void setRSSI(int32_t rssi);
+    void invalidate();  // Force redraw when colors change
 
   protected:
     void _draw() override;

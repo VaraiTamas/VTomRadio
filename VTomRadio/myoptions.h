@@ -39,6 +39,7 @@ Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not 
 
 /*----- LCD DISPLAY -----*/
 #define DSP_MODEL DSP_ILI9488
+//#define DSP_MODEL DSP_ST7796
 
 /*----- DISPLAY PIN SETS -----*/
 #define TFT_DC         9
@@ -53,14 +54,15 @@ Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not 
 
 /*----- Touch ISP -----*/
 #define TS_MODEL TS_MODEL_XPT2046
- #define TS_CS    3
+#define TS_CS    3
 
 /*----- Touch I2C -----*/
 // #define TS_MODEL TS_MODEL_FT6X36
 // #define TS_MODEL TS_MODEL_AXS15231B
-// #define TS_SCL      7
-// #define TS_SDA      8
-// #define TS_INT     17 
+// #define TS_SCL     7
+// #define TS_SDA     8
+// #define TS_INT    17 
+// #define TS_RST     1
 
 /*----- NEXTION DISPLAY serial port -----*/
 // #define NEXTION_RX			15
@@ -75,20 +77,20 @@ Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not 
 
 /*----- ENCODER 1 ------*/
 #define ENC_BTNR 47 // S2 41
-#define ENC_BTNL 42 // S1 40 48-RGB LED!
+#define ENC_BTNL 42 // S1 40 
 #define ENC_BTNB 21 // KEY 39
  #define ENC_INTERNALPULLUP	true
 
 /*----- ENCODER 2 -----*/
 #define ENC2_BTNR 41 // S2 47
-#define ENC2_BTNL 40 // S1 48
+#define ENC2_BTNL 40 // S1 48-RGB LED!
 #define ENC2_BTNB 39 // KEY 21
 #define ENC2_INTERNALPULLUP	true
 
 /*----- CLOCK MODUL RTC DS3132 -----*/
-// #define RTC_SCL			     7
-// #define RTC_SDA			     8
-// #define RTC_MODULE DS3231
+ #define RTC_SCL			     7
+ #define RTC_SDA			     8
+ #define RTC_MODULE DS3231
 
 /*----- REMOTE CONTROL INFRARED RECEIVER -----*/
 /*----- Alvásból ébresztéshez a GPIO 2 -őt kell használni, mert a GPIO 38 nem RTC pin. A PCB-n át kell kötni! -----*/
@@ -128,7 +130,7 @@ When music is not playing (stopped or volume is 0), the pin is set to LOW. This 
 /*----- Instead of WAKE_PIN, you can now set two pins for wake-up: WAKE_PIN1 and WAKE_PIN2 -----*/
 /*----- This way, you can wake up the device with a remote control and another button. -----*/
  //#define BTN_MODE ENC_BTNB
-//  #define WAKE_PIN1 IR_PIN
+  #define WAKE_PIN1 IR_PIN
 // #define WAKE_PIN2 ENC2_BTNB
 
 /*----- by Zsolt Simon -----*/
@@ -137,4 +139,4 @@ When music is not playing (stopped or volume is 0), the pin is set to LOW. This 
 // #define dlnaHost "192.168.1.200"
 // #define dlnaIDX  21
 
-#define POWER_LED 38      // Button LED pin (will be turned on when player is on)
+//#define POWER_LED 38      // Button LED pin (will be turned on when player is on)

@@ -13,26 +13,12 @@
 Player player;
 QueueHandle_t playerQueue;
 
-#if VS1053_CS != 255 && !I2S_INTERNAL
-  #if VS_HSPI
-Player::Player() : Audio(VS1053_CS, VS1053_DCS, VS1053_DREQ, &SPI2) {}
-  #else
-Player::Player() : Audio(VS1053_CS, VS1053_DCS, VS1053_DREQ, &SPI) {}
-  #endif
-void ResetChip() {
-  pinMode(VS1053_RST, OUTPUT);
-  digitalWrite(VS1053_RST, LOW);
-  delay(30);
-  digitalWrite(VS1053_RST, HIGH);
-  delay(100);
-}
-#else
   #if !I2S_INTERNAL
 Player::Player() {}
   #else
 Player::Player() : Audio(true, I2S_DAC_CHANNEL_BOTH_EN) {}
   #endif
-#endif
+//#endif
 
 void Player::init() {
   Serial.print("##[BOOT]#\tplayer.init\t");
@@ -52,12 +38,6 @@ void Player::init() {
   #if !I2S_INTERNAL
   setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT, I2S_MCLK);
   #endif
-#else
-  SPI.begin();
-  if (VS1053_RST > 0) {
-    ResetChip();
-  }
-  begin();
 #endif
   setBalance(-config.store.balance);  // "audio_change"   -16 to 16 fordítás 16 to -16
   setTone(config.store.bass, config.store.middle, config.store.trebble);

@@ -42,7 +42,7 @@
 #    define ESP_ARDUINO_3 1
 #endif
 
-#define CONFIG_VERSION 3
+#define CONFIG_VERSION 4
 
 enum playMode_e : uint8_t { // DLNA mod
     PM_WEB = 0,
@@ -434,10 +434,6 @@ class Config {
 };
 
 extern Config config;
-
-#if DSP_HSPI || TS_HSPI || VS_HSPI
-extern SPIClass SPI2;
-#endif
 
 #define REF_BY_LAYOUT(store, field, ly) ((ly) == 1 ? (store).field##Str : (ly) == 2 ? (store).field##Bbx : (ly) == 3 ? (store).field##Std : (store).field##Def)
 

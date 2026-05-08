@@ -1,10 +1,4 @@
 // clang-format off
-/*************************************************************************************
-    ILI9488 480X320 displays configuration file.
-    Copy this file to yoRadio/src/displays/conf/displayILI9488conf_custom.h
-    and modify it
-*************************************************************************************/
-
 #pragma once
 
 #include "../../core/config.h"

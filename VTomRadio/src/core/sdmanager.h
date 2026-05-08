@@ -18,6 +18,6 @@ class SDManager : public SDFS {
 };
 
 extern SDManager sdman;
-#if defined(SD_SPIPINS) || SD_HSPI
+#if defined(SD_SPIPINS)
 extern SPIClass  SDSPI;
 #endif

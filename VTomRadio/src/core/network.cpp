@@ -73,7 +73,9 @@ void MyNetwork::WiFiLostConnection(WiFiEvent_t event, WiFiEventInfo_t info) {
 
 bool MyNetwork::wifiBegin(bool silent) {
     // Hard Reset WiFi before starting
-    WiFi.disconnect(true);
+    if (WiFi.getMode() != WIFI_MODE_NULL) {
+        WiFi.disconnect(true);
+    }
     WiFi.mode(WIFI_OFF);
     delay(1000); 
     WiFi.mode(WIFI_STA);
@@ -87,7 +89,9 @@ bool MyNetwork::wifiBegin(bool silent) {
             Serial.print("##[BOOT]#\t");
             display.putRequest(BOOTSTRING, ls);
         }
-        WiFi.disconnect(true);
+        if (WiFi.getMode() != WIFI_MODE_NULL) {
+            WiFi.disconnect(true);
+        }
         uint32_t t0 = millis();
         while (WiFi.status() == WL_CONNECTED) {
             delay(100);

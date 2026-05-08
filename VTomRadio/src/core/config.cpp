@@ -29,6 +29,18 @@ QueueHandle_t irQueue = nullptr;
 #endif
 
 namespace {
+uint8_t scanI2CDevices() {
+    uint8_t found = 0;
+    for (uint8_t addr = 1; addr < 127; addr++) {
+        Wire.beginTransmission(addr);
+        if (Wire.endTransmission() == 0) {
+            Serial.printf("  Found: 0x%02X\n", addr);
+            ++found;
+        }
+    }
+    return found;
+}
+
 bool equalsIgnoreCase(const char* a, const char* b) {
     if (!a || !b) { return false; }
     while (*a && *b) {
@@ -85,6 +97,7 @@ void parseVersionTriplet(const char* ver, uint8_t& a, uint8_t& b, uint8_t& c) {
     if (!tok) { return; }
     c = clampChannel(strtol(tok, nullptr, 10));
 }
+
 } // namespace
 
 void u8fix(char* src) { // Ha az utolsó tőbbájtos karakter (ékezetes) utolsó bájtja hiányzik akkor az elejét levágja.
@@ -94,7 +107,7 @@ void u8fix(char* src) { // Ha az utolsó tőbbájtos karakter (ékezetes) utols�
 
 bool Config::_isFSempty() {
     // Base names without .gz — accepts both compressed and plain uploads
-    const char*   reqiredFiles[] = {"dragpl.js",   "ir.css",    "irrecord.html", "ir.js",    "logo.svg", "options.html",
+    const char*   reqiredFiles[] = {"dragpl.js",   "ir.css",    "irrecord.html", "ir.js",        "logo.svg",  "options.html",
                                     "player.html", "script.js", "style.css",     "updform.html", "theme.css", "theme-editor.html"};
     const uint8_t reqiredFilesSize = 12;
     char          fullpath[32];
@@ -108,7 +121,7 @@ bool Config::_isFSempty() {
         snprintf(fullpath, sizeof(fullpath), "/www/%s", reqiredFiles[i]);
         bool plain = LittleFS.exists(fullpath);
         snprintf(fullpath, sizeof(fullpath), "/www/%s.gz", reqiredFiles[i]);
-        bool gz    = LittleFS.exists(fullpath);
+        bool gz = LittleFS.exists(fullpath);
         if (!plain && !gz) {
             Serial.printf("[FS] Missing: %s(.gz)\n", fullpath);
             return true;
@@ -121,13 +134,30 @@ void Config::init() {
     sdResumePos = 0;
     /*----- I2C init -----*/
 #if (RTC_MODULE == DS3231) || (TS_MODEL == TS_MODEL_FT6X36) || (TS_MODEL == TS_MODEL_GT911) || (TS_MODEL == TS_MODEL_AXS15231B)
+    Serial.println("\n[INIT] Initializing I2C...");
+#    if (TS_MODEL == TS_MODEL_FT6X36) && (TS_RST != 255)
+    // FT6336U needs a hardware reset before it will respond on I2C
+    Serial.printf("[INIT] FT6X36 reset on GPIO %d\n", TS_RST);
+    pinMode(TS_RST, OUTPUT);
+    digitalWrite(TS_RST, LOW);
+    delay(20);
+    digitalWrite(TS_RST, HIGH);
+    delay(200);
+#    endif
     Wire.begin(TS_SDA, TS_SCL);
     Wire.setClock(400000);
-    Serial.println("Scanning I2C...");
-    for (uint8_t addr = 1; addr < 127; addr++) {
-        Wire.beginTransmission(addr);
-        if (Wire.endTransmission() == 0) { Serial.printf("Found: 0x%02X\n", addr); }
+    Serial.println("[INIT] Scanning I2C @400kHz...");
+    uint8_t found = scanI2CDevices();
+
+    if (found == 0) {
+        // Some ST7796+FT6336U boards are unstable at 400kHz due to weak pull-ups/long traces.
+        Serial.println("[INIT] No I2C device at 400kHz, retry @100kHz...");
+        Wire.setClock(100000);
+        found = scanI2CDevices();
     }
+
+    if (found == 0) { Serial.println("[INIT] I2C scan found no devices."); }
+    Serial.println("[INIT] I2C scan complete.");
 #endif
     // DLNA modplus
 #ifdef USE_DLNA
@@ -154,7 +184,7 @@ void Config::init() {
 #if IR_PIN != 255
     irBtnId = -1;
 #endif
-#if defined(SD_SPIPINS) || SD_HSPI
+#if defined(SD_SPIPINS)
 #    if !defined(SD_SPIPINS)
     SDSPI.begin();
 #    else
@@ -181,15 +211,9 @@ void Config::init() {
         saveValue(&store.vuPeak, true, false);
         saveValue(&store.vuPeakInitMarker, static_cast<uint8_t>(0xA5));
     }
-    if (store.clockFontStyle > CLOCKFONT_STYLE_CALIBRI) {
-        saveValue(&store.clockFontStyle, static_cast<uint8_t>(CLOCKFONT_STYLE));
-    }
-    if (store.clockFontStyle != CLOCKFONT_STYLE_DIGI7 && store.clockFontMono) {
-        saveValue(&store.clockFontMono, false);
-    }
-    if (store.dateFormat > 4) {
-        saveValue(&store.dateFormat, static_cast<uint8_t>(0));
-    }
+    if (store.clockFontStyle > CLOCKFONT_STYLE_CALIBRI) { saveValue(&store.clockFontStyle, static_cast<uint8_t>(CLOCKFONT_STYLE)); }
+    if (store.clockFontStyle != CLOCKFONT_STYLE_DIGI7 && store.clockFontMono) { saveValue(&store.clockFontMono, false); }
+    if (store.dateFormat > 4) { saveValue(&store.dateFormat, static_cast<uint8_t>(0)); }
     BOOTLOG("CONFIG_VERSION\t%d", store.version);
 
     store.play_mode = store.play_mode & 0b11;
@@ -255,16 +279,11 @@ void Config::init() {
 void Config::_setupVersion() {
     uint16_t currentVersion = store.version;
     switch (currentVersion) {
-        case 0:
-            saveValue(&store.playlistMovingCursor, false);
-            break;
-        case 1:
-            saveValue(&store.encodersIndependent, false);
-            break;
-        case 2:
-            saveValue(&store.rssiAsText, false);
-            break;
-        }
+        case 0: saveValue(&store.playlistMovingCursor, false); break;
+        case 1: saveValue(&store.encodersIndependent, false); break;
+        case 2: saveValue(&store.rssiAsText, false); break;
+        case 3: break;
+    }
     currentVersion++;
     saveValue(&store.version, currentVersion);
 }
@@ -489,6 +508,7 @@ void Config::_initHW() {
     eepromRead(EEPROM_START_IR, ircodes);
 #endif
 #if BRIGHTNESS_PIN != 255
+    gpio_hold_dis((gpio_num_t)BRIGHTNESS_PIN); // ← add (MB)
     pinMode(BRIGHTNESS_PIN, OUTPUT);
     // Keep backlight off during display controller init to avoid boot flash.
     analogWrite(BRIGHTNESS_PIN, 0);
@@ -582,10 +602,10 @@ bool Config::setThemeColorByName(const char* name, uint8_t r, uint8_t g, uint8_t
     if (!name || !*name) { return false; }
     const uint16_t c = color565(r, g, b);
 
-#define SET_THEME_COLOR(_name, _field) \
+#define SET_THEME_COLOR(_name, _field)   \
     if (equalsIgnoreCase(name, _name)) { \
-        theme._field = c; \
-        return true; \
+        theme._field = c;                \
+        return true;                     \
     }
 
     SET_THEME_COLOR("background", background);
@@ -693,10 +713,10 @@ bool Config::setThemeColorByName(const char* name, uint8_t r, uint8_t g, uint8_t
 bool Config::getThemeColorByName(const char* name, uint16_t& color) const {
     if (!name || !*name) { return false; }
 
-#define GET_THEME_COLOR(_name, _field) \
+#define GET_THEME_COLOR(_name, _field)   \
     if (equalsIgnoreCase(name, _name)) { \
-        color = theme._field; \
-        return true; \
+        color = theme._field;            \
+        return true;                     \
     }
 
     GET_THEME_COLOR("background", background);
@@ -803,8 +823,8 @@ bool Config::getThemeColorByName(const char* name, uint16_t& color) const {
 
 bool Config::applyThemeCsv(const char* csvData) {
     if (!csvData) { return false; }
-    bool  changed = false;
-    char  line[160];
+    bool        changed = false;
+    char        line[160];
     const char* p = csvData;
 
     while (*p) {
@@ -843,9 +863,7 @@ bool Config::applyThemeCsv(const char* csvData) {
         long bv = strtol(bs, &end, 10);
         if (end == bs) { continue; }
 
-        if (setThemeColorByName(name, clampChannel(rv), clampChannel(gv), clampChannel(bv))) {
-            changed = true;
-        }
+        if (setThemeColorByName(name, clampChannel(rv), clampChannel(gv), clampChannel(bv))) { changed = true; }
     }
 
     return changed;
@@ -949,7 +967,7 @@ bool Config::saveThemeToFile() {
 
 String Config::themeToJson() const {
     String out = "{";
-    bool first = true;
+    bool   first = true;
 
     auto appendColor = [&](const char* key, uint16_t color) {
         uint8_t r, g, b;
@@ -1118,7 +1136,7 @@ void Config::resetSystem(const char* val, uint8_t clientId) {
         saveValue(&store.vuPeakInitMarker, static_cast<uint8_t>(0xA5), false);
         saveValue(&store.vuBidirectional, false, false);
         saveValue(&store.softapdelay, (uint8_t)0, false);
-        saveValue(&store.abuff, (uint16_t)(VS1053_CS == 255 ? 7 : 10), false);
+        // saveValue(&store.abuff, (uint16_t)(VS1053_CS == 255 ? 7 : 10), false);
         saveValue(&store.watchdog, true);
         saveValue(&store.stallWatchdog, true, false);
         saveValue(&store.nameday, true); // Módosítás "nameday"
@@ -1144,6 +1162,7 @@ void Config::resetSystem(const char* val, uint8_t clientId) {
         display.flip();
         saveValue(&store.invertdisplay, false, false);
         display.invert();
+        display.flip();
         saveValue(&store.dspon, true, false);
         store.brightness = 100;
         setBrightness(false);
@@ -1195,8 +1214,13 @@ void Config::resetSystem(const char* val, uint8_t clientId) {
     if (strcmp(val, "controls") == 0) {
         saveValue(&store.fliptouch, false, false);
         saveValue(&store.dbgtouch, false, false);
+#if TS_MODEL == TS_MODEL_FT6X36
+        saveValue(&store.xTouchMirroring, false, false);
+        saveValue(&store.yTouchMirroring, false, false);
+#else
         saveValue(&store.xTouchMirroring, true, false);
         saveValue(&store.yTouchMirroring, true, false);
+#endif
         saveValue(&store.skipPlaylistUpDown, false);
         saveValue(&store.encodersIndependent, false);
         setIRTolerance(40);
@@ -1260,7 +1284,7 @@ void Config::setDefaults() {
     store.screensaverPlayingEnabled = false;
     store.screensaverPlayingTimeout = 5;
     store.screensaverPlayingBlank = false;
-    store.abuff = VS1053_CS == 255 ? 7 : 10;
+    // store.abuff = VS1053_CS == 255 ? 7 : 10;
     store.watchdog = true;
     store.nameday = true;
     store.clockTtsEnabled = false;
@@ -1286,8 +1310,13 @@ void Config::setDefaults() {
     store.directChannelChange = false;
     store.stationsListReturnTime = 3;
     store.stallWatchdog = true;
+#if TS_MODEL == TS_MODEL_FT6X36
+    store.xTouchMirroring = false;
+    store.yTouchMirroring = false;
+#else
     store.xTouchMirroring = true;
     store.yTouchMirroring = false;
+#endif
 
     store.rssiAsText = false;
     eepromWrite(EEPROM_START, store);
@@ -1652,9 +1681,7 @@ bool Config::parseSsid(const char* line, char* ssid, char* pass) {
 }
 
 bool Config::saveWifiFromNextion(const char* post) {
-    if (!LittleFS.exists("/data")) {
-        LittleFS.mkdir("/data");
-    }
+    if (!LittleFS.exists("/data")) { LittleFS.mkdir("/data"); }
     File file = LittleFS.open(SSIDS_PATH, "w");
     if (!file) {
         Serial.printf("[WIFI] saveWifiFromNextion: cannot open %s for write\n", SSIDS_PATH);
@@ -1668,9 +1695,7 @@ bool Config::saveWifiFromNextion(const char* post) {
 }
 
 bool Config::saveWifi() {
-    if (!LittleFS.exists("/data")) {
-        LittleFS.mkdir("/data");
-    }
+    if (!LittleFS.exists("/data")) { LittleFS.mkdir("/data"); }
     if (!LittleFS.exists(TMP_PATH)) { return false; }
     LittleFS.remove(SSIDS_PATH);
     LittleFS.rename(TMP_PATH, SSIDS_PATH);
@@ -1776,9 +1801,15 @@ void Config::doSleep() {
 }
 
 void Config::doSleepW() {
+    analogWrite(BRIGHTNESS_PIN, 0);           // ← add (MB)
+    pinMode(BRIGHTNESS_PIN, OUTPUT);          // ← add (MB)
+    digitalWrite(BRIGHTNESS_PIN, LOW);        // ← add (MB)
+    gpio_hold_en((gpio_num_t)BRIGHTNESS_PIN); // ← add (MB)
+    gpio_deep_sleep_hold_en();                // ← add (MB)
     display.deepsleep();
+    
 #ifdef USE_NEXTION
-    nextion.sleep();
+        nextion.sleep();
 #endif
     uint64_t mask = 0;
 #if WAKE_PIN1 >= 0 && WAKE_PIN1 < 64
@@ -1840,11 +1871,7 @@ void Config::bootInfo() {
     for (int i = 0; i < 17; i = i + 8) { chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i; }
     BOOTLOG("chip:\t\tmodel: %s | rev: %d | id: %lu | cores: %d | psram: %lu", ESP.getChipModel(), ESP.getChipRevision(), chipId, ESP.getChipCores(), ESP.getPsramSize());
     BOOTLOG("display:\t%d", DSP_MODEL);
-    if (VS1053_CS == 255) {
-        BOOTLOG("audio:\t\t%s (%d, %d, %d, mclk:%d)", "I2S", I2S_DOUT, I2S_BCLK, I2S_LRC, I2S_MCLK);
-    } else {
-        BOOTLOG("audio:\t\t%s (%d, %d, %d, %d, %s)", "VS1053", VS1053_CS, VS1053_DCS, VS1053_DREQ, VS1053_RST, VS_HSPI ? "true" : "false");
-    }
+    BOOTLOG("audio:\t\t%s (%d, %d, %d, mclk:%d)", "I2S", I2S_DOUT, I2S_BCLK, I2S_LRC, I2S_MCLK);
     BOOTLOG("audioinfo:\t%s", store.audioinfo ? "true" : "false");
     BOOTLOG("smartstart:\t%d", store.smartstart);
     BOOTLOG("vumeter:\t%s", store.vumeter ? "true" : "false");

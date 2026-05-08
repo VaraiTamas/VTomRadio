@@ -225,9 +225,9 @@ bool TimeKeeper::loop1() { // core1 (player)
     if (currentTime - _last2s >= 2000) { // 2sec
         _last2s = currentTime;
     }
-/*----- by Andrzej Jaroszuk -----*/
-/*----- Megállítja a lejátszást internet rádió módban, ha a lejátszási puffer elfogy. Utána  újraindítja a lejátszást. -----*/
-/*----- Stops playback in internet radio mode when the playback buffer runs out. Then restarts playback. -----*/
+    /*----- by Andrzej Jaroszuk -----*/
+    /*----- Megállítja a lejátszást internet rádió módban, ha a lejátszási puffer elfogy. Utána  újraindítja a lejátszást. -----*/
+    /*----- Stops playback in internet radio mode when the playback buffer runs out. Then restarts playback. -----*/
     if (currentTime - _lastStallCheck >= 1000) { // 1sec
         _lastStallCheck = currentTime;
         if (config.store.stallWatchdog && player.isRunning() && config.getMode() == PM_WEB && network.status == CONNECTED && !player.lockOutput) {
@@ -288,7 +288,7 @@ void TimeKeeper::waitAndReturnPlayer(uint8_t time_s) {
 void TimeKeeper::_returnPlayer() {
     if (_returnPlayerTime > 0 && millis() >= _returnPlayerTime) {
         _returnPlayerTime = 0;
-        if (display.mode() == STATIONS) { 
+        if (display.mode() == STATIONS) {
             if (config.store.directChannelChange) {
                 if (config.lastStation() != display.currentPlItem) {
                     display.putRequest(CLOSEPLAYLIST, display.currentPlItem); // STATION listaban vagyunk, akkor a kijelzőn lévő számra váltunk
@@ -364,18 +364,19 @@ void TimeKeeper::_upScreensaver() {
     }
 }
 
+#define RSSI_TESZT false
 void TimeKeeper::_upRSSI() {
     if (network.status == CONNECTED) {
-        netserver.setRSSI(WiFi.RSSI());
-        netserver.requestOnChange(NRSSI, 0);
-        if (display.ready()) { display.putRequest(DSPRSSI, netserver.getRSSI()); }
-/*        
-// léptető teszt
+#if (RSSI_TESZT)
         static int fakeRssi = -100;
         netserver.setRSSI(fakeRssi);
         fakeRssi += 10;
         if (fakeRssi > -10) fakeRssi = -100;
-*/
+#else
+        netserver.setRSSI(WiFi.RSSI());
+#endif
+        netserver.requestOnChange(NRSSI, 0);
+        if (display.ready()) { display.putRequest(DSPRSSI, netserver.getRSSI()); }
     }
 #ifdef USE_SD
     if (display.mode() != SDCHANGE) { player.sendCommand({PR_CHECKSD, 0}); }
@@ -399,7 +400,7 @@ void TimeKeeper::timeTask() {
         mktime(&syncedTime);
 
         const bool minuteOrDateChanged = (prevTime.tm_min != syncedTime.tm_min) || (prevTime.tm_hour != syncedTime.tm_hour) || (prevTime.tm_mday != syncedTime.tm_mday) ||
-                                       (prevTime.tm_mon != syncedTime.tm_mon) || (prevTime.tm_year != syncedTime.tm_year);
+                                         (prevTime.tm_mon != syncedTime.tm_mon) || (prevTime.tm_year != syncedTime.tm_year);
 
         network_set_timeinfo(syncedTime);
         if (minuteOrDateChanged) {

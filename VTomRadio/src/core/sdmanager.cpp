@@ -12,7 +12,7 @@
 #include "display.h"
 #include "player.h"
 
-#if defined(SD_SPIPINS) || SD_HSPI
+#if defined(SD_SPIPINS)
 SPIClass  SDSPI(HSPI);
 #define SDREALSPI SDSPI
 #else

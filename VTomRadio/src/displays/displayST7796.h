@@ -17,19 +17,19 @@
 
 #include "lgfx/lgfx_base.h"
 
-class LGFX_ILI9488 : public LGFX_Base<lgfx::Panel_ILI9488> {
-    public:
-    LGFX_ILI9488() : LGFX_Base(LGFX_WIDTH, LGFX_HEIGHT, LGFX_ROTATION) {}
+class LGFX_ST7796 : public LGFX_Base<lgfx::Panel_ST7796> {
+	public:
+	LGFX_ST7796() : LGFX_Base(LGFX_WIDTH, LGFX_HEIGHT, LGFX_ROTATION) {}
 };
 
-typedef LGFX_ILI9488 yoDisplay;
+typedef LGFX_ST7796 yoDisplay;
 typedef lgfx::LGFX_Sprite Canvas;
 
 #include "tools/commongfx.h"
 
 #include "conf/conf_480x320.h"
 
-#define ILI9488_SLPIN   0x10
-#define ILI9488_SLPOUT  0x11
-#define ILI9488_DISPOFF 0x28
-#define ILI9488_DISPON  0x29
+#define ST7796_SLPIN   0x10
+#define ST7796_SLPOUT  0x11
+#define ST7796_DISPOFF 0x28
+#define ST7796_DISPON  0x29

@@ -39,6 +39,11 @@ OneButton::OneButton(const int pin, const boolean activeLow, const bool pullupAc
   // OneButton();
   _pin = pin;
 
+  // Skip GPIO operations for GPIO 255 (undefined/unused pin)
+  if (pin == 255) {
+    return;
+  }
+
   if (activeLow) {
     // the button connects the input pin to GND when pressed.
     _buttonPressed = LOW;

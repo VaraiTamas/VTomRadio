@@ -1,10 +1,11 @@
 #include "../core/options.h"
-#if DSP_MODEL == DSP_ILI9488 || DSP_MODEL == DSP_ILI9486
+#if DSP_MODEL == DSP_ST7796
 #    include "display_select.h"
 #    include "../core/config.h"
 
 DspCore::DspCore() {}
 void DspCore::initDisplay() {
+    Serial.printf("displayST7796.cpp: initDisplay()\n");
 
 #if TS_MODEL == TS_MODEL_XPT2046
     // Kényszerítsük a Touch-ot, hogy engedje el az SPI buszt (XPT2046 only)
@@ -14,18 +15,25 @@ void DspCore::initDisplay() {
     }
 #endif
 
-    // Csak ezután jöhet a Lovyan init
+    // Csak ezutan johet a Lovyan init
     if (!init()) {
         Serial.println("LGFX Init FAIL");
     } else {
         Serial.println("LGFX Init OK");
     }
-    // setRotation(1);
+#if TS_MODEL == TS_MODEL_FT6X36
+    if (touch()) {
+        Serial.println("Touch driver: found");
+    } else {
+        Serial.println("Touch driver: NOT found / init failed");
+    }
+#endif
     setTextWrap(false);
     setTextSize(1);
     fillScreen(0x0000);
     invert();
     flip();
+    Serial.printf("displayST7796.cpp: initDisplay() DONE\n");
 }
 
 void DspCore::clearDsp(bool black) {
@@ -45,16 +53,16 @@ void DspCore::invert() {
 }
 
 void DspCore::sleep(void) {
-    writeCommand(ILI9488_SLPIN);
+    writeCommand(ST7796_SLPIN);
     delay(150);
-    writeCommand(ILI9488_DISPOFF);
+    writeCommand(ST7796_DISPOFF);
     delay(150);
 }
 
 void DspCore::wake(void) {
-    writeCommand(ILI9488_DISPON);
+    writeCommand(ST7796_DISPON);
     delay(150);
-    writeCommand(ILI9488_SLPOUT);
+    writeCommand(ST7796_SLPOUT);
     delay(150);
 }
 

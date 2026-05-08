@@ -50,6 +50,7 @@ class Display {
     uint16_t      height();
     void          setBrightnessPercent(uint8_t percent);
     void          applyVuModeChange();
+    void          invalidateThemeWidgets();  // Refresh all widgets when theme colors change
 #    ifdef NAMEDAYS_FILE
     void loopNameday(bool force = false);
 #    endif

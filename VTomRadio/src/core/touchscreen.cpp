@@ -59,6 +59,9 @@ void TouchScreen::loop() {
     // CSAK AKKOR frissítsük a touchX/Y-t, ha tényleg érintés van!
     // Ha istouched hamis, akkor a touchX/Y maradjon az előző érvényes érték.
     if (istouched) {
+        if(config.store.dbgtouch) {
+            Serial.printf("[TOUCH] raw x=%d y=%d  screen=%dx%d\n", x, y, _width, _height);
+        }
         touchX = x;
         touchY = y;
 
