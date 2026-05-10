@@ -390,9 +390,7 @@ void Display::_swichMode(displayMode_e newmode) {
     _mode = newmode;
     dsp.setScrollId(NULL);
     if (newmode == PLAYER) {
-        if (player.isRunning()) {
-            _clock->moveBack(); // Ha az óra nem az erdeti helyén van például képernyővédő miatt, akkor visszaállítjuk az eredeti helyére.
-        }
+        _clock->moveBack(); // Ha az óra nem az eredeti helyén van (pl. képernyővédő után), visszaállítjuk.
         _refreshThemeColors();
         numOfNextStation = 0;
         _meta->setAlign(metaConf.widget.align);
@@ -736,14 +734,22 @@ void Display::_time(bool redraw) {
     }
 #    endif
     if (config.isScreensaver && displayTime.tm_sec % 60 == 0) {
-#    if TIME_SIZE < 19
-        uint16_t ft = static_cast<uint16_t>(random(TFT_FRAMEWDT, (dsp.height() - _clock->height() - TFT_FRAMEWDT)));
-#    else
-        uint16_t ft = static_cast<uint16_t>(random(TFT_FRAMEWDT + TIME_SIZE, (dsp.height() - _clock->dateSize() - TFT_FRAMEWDT * 2)));
-#    endif
-        uint16_t lt = static_cast<uint16_t>(random(TFT_FRAMEWDT, (dsp.width() - _clock->clockWidth() - TFT_FRAMEWDT)));
-        if (clockConf.align == WA_CENTER) { lt -= (dsp.width() - _clock->clockWidth()) / 2; }
-        _clock->moveTo({lt, ft, 0}); // Az óra új helyre mozgatása a képernyőn, hogy megakadályozza a beégést (képernyővédő).
+        const int16_t minTop = TFT_FRAMEWDT;
+        const int16_t minLeft = TFT_FRAMEWDT;
+        const int16_t maxTop = (int16_t)dsp.height() - (int16_t)_clock->height() - (int16_t)TFT_FRAMEWDT;
+        const int16_t maxLeft = (int16_t)dsp.width() - (int16_t)_clock->clockWidth() - (int16_t)TFT_FRAMEWDT;
+
+        uint16_t ft = (uint16_t)max<int16_t>(0, minTop);
+        uint16_t lt = (uint16_t)max<int16_t>(0, minLeft);
+
+        if (maxTop > minTop) {
+            ft = static_cast<uint16_t>(random(minTop, maxTop + 1));
+        }
+        if (maxLeft > minLeft) {
+            lt = static_cast<uint16_t>(random(minLeft, maxLeft + 1));
+        }
+
+        _clock->moveTo({lt, ft, 0}); // Az óra új helyre mozgatása beégés megelőzéshez, képernyőn belül tartva.
     }
     _clock->draw(redraw);
     /*#ifdef USE_NEXTION

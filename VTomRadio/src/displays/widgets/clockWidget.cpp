@@ -174,6 +174,12 @@ uint16_t ClockWidget::_left() {
 }
 
 void ClockWidget::_getTimeBounds() {
+    if (config.isScreensaver) {
+        _clockleft = _config.left;
+        _dotsleft = 0;
+        return;
+    }
+
     switch (_config.align) {
         case WA_LEFT: _clockleft = _clockConf.left; break;
         case WA_RIGHT: _clockleft = dsp.width() - _clockwidth - _clockConf.left; break;

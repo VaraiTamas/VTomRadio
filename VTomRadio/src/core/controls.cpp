@@ -176,9 +176,6 @@ void loopControls() {
 #if IR_PIN != 255
     irLoop();
 #endif
-//#if (TS_MODEL != TS_MODEL_UNDEFINED) && (DSP_MODEL != DSP_DUMMY)
-  //  if (network.status == CONNECTED || network.status == SDREADY) touchscreen.loop();
-//#endif
 }
 
 #if ENC_BTNL != 255 || ENC2_BTNL != 255
@@ -194,7 +191,7 @@ void encodersLoop(myEncoder* enc, bool first) {
     if (volumeMode) {
         int nv = config.store.volume + delta;
         if (nv < 0) { nv = 0; }
-        if (nv > 254) { nv = 254; }
+        if (nv > 21) { nv = 21; }
         player.setVol((uint8_t)nv);
     } else {
         if (delta > 0) {
@@ -212,7 +209,7 @@ void encodersLoop(myEncoder* enc, bool first) {
             if (display.mode() != VOL) { display.putRequest(NEWMODE, VOL); }
             int nv = config.store.volume + delta;
             if (nv < 0) { nv = 0; }
-            if (nv > 100) { nv = 100; }
+            if (nv > 21) { nv = 21; }
             player.setVol((uint8_t)nv);
             config.screensaverTicks = 0;
         } else {

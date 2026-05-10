@@ -29,17 +29,6 @@ QueueHandle_t irQueue = nullptr;
 #endif
 
 namespace {
-uint8_t scanI2CDevices() {
-    uint8_t found = 0;
-    for (uint8_t addr = 1; addr < 127; addr++) {
-        Wire.beginTransmission(addr);
-        if (Wire.endTransmission() == 0) {
-            Serial.printf("  Found: 0x%02X\n", addr);
-            ++found;
-        }
-    }
-    return found;
-}
 
 bool equalsIgnoreCase(const char* a, const char* b) {
     if (!a || !b) { return false; }
@@ -147,15 +136,14 @@ void Config::init() {
     Wire.begin(TS_SDA, TS_SCL);
     Wire.setClock(400000);
     Serial.println("[INIT] Scanning I2C @400kHz...");
-    uint8_t found = scanI2CDevices();
-
-    if (found == 0) {
-        // Some ST7796+FT6336U boards are unstable at 400kHz due to weak pull-ups/long traces.
-        Serial.println("[INIT] No I2C device at 400kHz, retry @100kHz...");
-        Wire.setClock(100000);
-        found = scanI2CDevices();
+    uint8_t found = 0;
+    for (uint8_t addr = 1; addr < 127; addr++) {
+        Wire.beginTransmission(addr);
+        if (Wire.endTransmission() == 0) {
+            Serial.printf("  Found: 0x%02X\n", addr);
+            ++found;
+        }
     }
-
     if (found == 0) { Serial.println("[INIT] I2C scan found no devices."); }
     Serial.println("[INIT] I2C scan complete.");
 #endif
