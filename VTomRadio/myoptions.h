@@ -25,7 +25,7 @@
 
 /* -- Névnapok megjelenítése -- Display name days --
 Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not filled in.) */
-//#define NAMEDAYS_FILE HU
+#define NAMEDAYS_FILE HU
 
 #define USE_BUILTIN_LED false /* The RGB LED does not turn on.. */
 
