@@ -1,6 +1,3 @@
-#ifndef AUDIOHANDLERS_H
-#define AUDIOHANDLERS_H
-
 #pragma once
 
 #include <Arduino.h>
@@ -12,13 +9,48 @@
 extern decltype(nextion) nextion;  // Nextion kijelző objektum (extern)
 #endif
 
-// Globális vagy osztály szintű változók
 String currentArtist = "";
 String currentTitle = "";
 uint16_t currentStationId = static_cast<uint16_t>(-1);
-bool metaOff = false;
+bool metaOff = false; 
 
-// Előre deklarációk
+static bool g_forcePlaylistStationName = false;
+static String g_forcedPlaylistStationName = "";
+
+static bool isDotPlaylistStationActive() {
+  const char *name = config.station.name;
+  if (!name) {
+    return false;
+  }
+
+  // Új dot-os állomás indult: eltesszük a pont nélküli listás nevet.
+  if (name[0] == '.') {
+    g_forcePlaylistStationName = true;
+    g_forcedPlaylistStationName = String(name + 1);
+    return true;
+  }
+
+  // Már levágtuk a pontot, de még ugyanaz az állomás aktív.
+  if (g_forcePlaylistStationName && g_forcedPlaylistStationName.length() > 0 && g_forcedPlaylistStationName == String(name)) {
+    return true;
+  }
+
+  // Másik, nem dot-os állomásra váltottunk.
+  g_forcePlaylistStationName = false;
+  g_forcedPlaylistStationName = "";
+  return false;
+}
+
+static const char *playlistStationDisplayName() {
+  if (g_forcePlaylistStationName && g_forcedPlaylistStationName.length() > 0) {
+    return g_forcedPlaylistStationName.c_str();
+  }
+  if (config.station.name && config.station.name[0] == '.') {
+    return config.station.name + 1;
+  }
+  return config.station.name;
+}
+
 void my_audio_info(Audio::msg_t m);
 void processID3(const char *msg);
 void audio_bitrate(const char *info);
@@ -69,14 +101,19 @@ void my_audio_info(Audio::msg_t m) {
     return;
   }
 
-  // META letiltás: ha a csatorna neve ponttal kezdődik,
-  // akkor a title mindig a listában tárolt név lesz,
-  // és nem használunk stream metaadatot.
-  if (config.station.name[0] == '.') {
-    config.setTitle(config.station.name + 1);
-    metaOff = true;
-  } else {
-    metaOff = false;
+  // Ponttal kezdődő állomásnév kezelése:
+  // - a kijelzőn/weben maradjon a listában megadott állomásnév a kezdő pont nélkül
+  // - de a stream metaadatát NE tiltsuk le, hogy előadó/dalcím mindig megjelenhessen
+  const bool forcePlaylistStationName = isDotPlaylistStationActive();
+  metaOff = false;
+
+  if (forcePlaylistStationName) {
+    const char *displayName = playlistStationDisplayName();
+    if (strcmp(config.station.name, displayName) != 0) {
+      config.setStation(displayName);
+      display.putRequest(NEWSTATION);
+      netserver.requestOnChange(STATION, 0);
+    }
   }
 
   // Általános hibák, amiket bármi eseményben figyelhetünk
@@ -130,10 +167,14 @@ void my_audio_info(Audio::msg_t m) {
 
       // Ha a stream „skip metadata” módot jelez, akkor állomásnév kerül a title-be
       if (strstr(msg, "skip metadata") != nullptr) {
-        if (config.station.name[0] == '.') {
-          config.setTitle(config.station.name + 1);
-        } else {
-          config.setTitle(config.station.name);
+        // Csak akkor írjuk ki fallbackként az állomás nevét, ha még nincs title.
+        // Így a később/korábban érkező ICY/ID3 metaadatot nem töröljük felül.
+        if (strlen(config.station.title) == 0) {
+          if (forcePlaylistStationName) {
+            config.setTitle(playlistStationDisplayName());
+          } else {
+            config.setTitle(config.station.name);
+          }
         }
       }
     } break;
@@ -179,8 +220,12 @@ void my_audio_info(Audio::msg_t m) {
     case Audio::evt_name:
     {
       char metaBuf[BUFLEN];
-      if (!metaOff && cleanMeta(msg, metaBuf, sizeof(metaBuf))) {
+      if (!forcePlaylistStationName && cleanMeta(msg, metaBuf, sizeof(metaBuf))) {
         config.setStation(metaBuf);
+        display.putRequest(NEWSTATION);
+        netserver.requestOnChange(STATION, 0);
+      } else if (forcePlaylistStationName) {
+        config.setStation(playlistStationDisplayName());
         display.putRequest(NEWSTATION);
         netserver.requestOnChange(STATION, 0);
       }
@@ -241,15 +286,18 @@ void my_audio_info(Audio::msg_t m) {
   //    ami nem szorosan event-típushoz kötött.
   // --------------------------------------------------------------------
 
-  // icy-name: ... → sok rádió ilyen formában küldi a nevet
-  if (!metaOff) {
+  // icy-name: ... → sok rádió ilyen formában küldi a stream állomásnevét.
+  // Dot-os playlist névnél ezt szándékosan nem engedjük felülírni.
+  if (!forcePlaylistStationName) {
     const char *ici = strstr(msg, "icy-name: ");
     if (ici != nullptr) {
       char icyName[BUFLEN] = {0};
       safeStrCopy(icyName, ici + strlen("icy-name: "), sizeof(icyName));
       char metaBuf[BUFLEN];
       if (cleanMeta(icyName, metaBuf, sizeof(metaBuf)) && strlen(metaBuf) > 0) {
-        audio_setTitleSafe(metaBuf);
+        config.setStation(metaBuf);
+        display.putRequest(NEWSTATION);
+        netserver.requestOnChange(STATION, 0);
       }
     }
   }
@@ -377,6 +425,13 @@ bool printable(const char *info) {
 
 // Külső meghívásra.
 void audio_showstation(const char *info) {
+  if (isDotPlaylistStationActive()) {
+    config.setStation(playlistStationDisplayName());
+    display.putRequest(NEWSTATION);
+    netserver.requestOnChange(STATION, 0);
+    return;
+  }
+
   bool p = printable(info) && (info && strlen(info) > 0);
   if (player.remoteStationName) {  // MQTT-ről jön
     config.setStation(p ? info : config.station.name);
@@ -417,7 +472,11 @@ void audio_error(const char *info) {
 }
 
 void audio_id3artist(const char *info) {
-  config.setStation(info);
+  if (isDotPlaylistStationActive()) {
+    config.setStation(playlistStationDisplayName());
+  } else {
+    config.setStation(info);
+  }
   display.putRequest(NEWSTATION);
   netserver.requestOnChange(STATION, 0);
 }
@@ -576,4 +635,3 @@ void _utf8_clean(char *s) {
   *out = '\0';
 }
 
-#endif  // AUDIOHANDLERS_H
