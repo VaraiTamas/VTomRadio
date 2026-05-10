@@ -96,6 +96,7 @@ Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not 
 /*----- Alvásból ébresztéshez a GPIO 2 -őt kell használni, mert a GPIO 38 nem RTC pin. A PCB-n át kell kötni! -----*/
 /*----- To wake from sleep, you must use GPIO 2, because GPIO 38 is not an RTC pin. It must be connected via the PCB! -----*/
 #define IR_PIN 2  //38
+#define IR_NEC_ONLY  // Build only NEC decoder sources from IRremoteESP8266 (faster/smaller build)
 
 /*----- SD CARD -----*/
 // #define SDC_CS     18

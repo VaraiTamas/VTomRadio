@@ -47,6 +47,9 @@
 
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
+#if __has_include("../../myoptions.h")
+#include "../../myoptions.h"
+#endif
 #ifdef UNIT_TEST
 #include <iostream>
 #include <string>
@@ -110,6 +113,21 @@ typedef volatile const uint16_t atomic_const_uint16_t;
 //      If you want to enable support for every protocol *except* _decoding_ the
 //      Kelvinator protocol, you would use:
 //        `-DDECODE_KELVINATOR=false`
+#if defined(IR_NEC_ONLY)
+#ifndef _IR_ENABLE_DEFAULT_
+#define _IR_ENABLE_DEFAULT_ false
+#endif  // _IR_ENABLE_DEFAULT_
+#ifndef DECODE_NEC
+#define DECODE_NEC true
+#endif  // DECODE_NEC
+#ifndef SEND_NEC
+#define SEND_NEC false
+#endif  // SEND_NEC
+#ifndef DECODE_HASH
+#define DECODE_HASH false
+#endif  // DECODE_HASH
+#endif  // IR_NEC_ONLY
+
 #ifndef _IR_ENABLE_DEFAULT_
 #define _IR_ENABLE_DEFAULT_ true  // Unless set externally, the default is on.
 #endif  // _IR_ENABLE_DEFAULT_

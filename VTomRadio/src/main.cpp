@@ -68,11 +68,13 @@ void setupOTA() {
 }
 #endif
 
-#include "IRremoteESP8266/IRrecv.h"
-#include "IRremoteESP8266/IRutils.h"
+#if IR_PIN != 255
+#    include "IRremoteESP8266/IRrecv.h"
+#    include "IRremoteESP8266/IRutils.h"
 
 extern IRrecv         irrecv;
 extern decode_results irResults;
+#endif
 // void checkMaintenanceMode();
 
 static TaskHandle_t clockTtsTaskHandle = nullptr;

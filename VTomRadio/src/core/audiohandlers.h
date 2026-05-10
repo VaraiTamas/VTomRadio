@@ -45,7 +45,7 @@ static const char *playlistStationDisplayName() {
   if (g_forcePlaylistStationName && g_forcedPlaylistStationName.length() > 0) {
     return g_forcedPlaylistStationName.c_str();
   }
-  if (config.station.name && config.station.name[0] == '.') {
+  if (config.station.name[0] == '.') {
     return config.station.name + 1;
   }
   return config.station.name;
