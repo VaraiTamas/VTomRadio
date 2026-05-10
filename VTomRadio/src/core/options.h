@@ -300,6 +300,9 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
 
 #endif
 /*        Other settings. You can overwrite them in the myoptions.h file        */
+#ifndef NAMEDAYS_FILE
+  #define NAMEDAYS_FILE HU  // Namedays file for the selected language. Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not filled in.)
+#endif
 #ifndef MUTE_PIN
   #define MUTE_PIN      255   // MUTE Pin
 #endif

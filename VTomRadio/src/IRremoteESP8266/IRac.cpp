@@ -379,7 +379,10 @@ bool IRac::isProtocolSupported(const decode_type_t protocol) {
 #if SEND_WHIRLPOOL_AC
     case decode_type_t::WHIRLPOOL_AC:
 #endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch-unreachable"
       return true;
+#pragma GCC diagnostic pop
     default:
       return false;
   }
