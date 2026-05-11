@@ -2,7 +2,7 @@
 #include <LittleFS.h>
 #include <stdlib.h>
 #include <LovyanGFX.hpp>
-#include "../Displays/display_select.h"
+#include "../displays/display_select.h"
 #include "config.h"
 
 // ================= VLW =================
