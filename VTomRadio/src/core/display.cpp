@@ -119,10 +119,7 @@ void Display::init() {
     dsp.initDisplay(); // void DspCore::initDisplay() - Ez a függvény hívja meg a display inicializálását, ami a DspCore osztályban van definiálva. Ez a függvény felelős a kijelző beállításáért és
                        // előkészítéséért a használatra.
 
-#    if BRIGHTNESS_PIN != 255
-    // Turn backlight on only after controller init to avoid startup white flash.
-    analogWrite(BRIGHTNESS_PIN, config.store.dspon ? map(config.store.brightness, 0, 100, 0, 255) : 0);
-#    endif
+
 
     if (!loadFonts()) {
         Serial.println("[FONT] HIBA: Egy vagy tobb kotelezo font hianyzik a LittleFS-rol!");
@@ -742,12 +739,8 @@ void Display::_time(bool redraw) {
         uint16_t ft = (uint16_t)max<int16_t>(0, minTop);
         uint16_t lt = (uint16_t)max<int16_t>(0, minLeft);
 
-        if (maxTop > minTop) {
-            ft = static_cast<uint16_t>(random(minTop, maxTop + 1));
-        }
-        if (maxLeft > minLeft) {
-            lt = static_cast<uint16_t>(random(minLeft, maxLeft + 1));
-        }
+        if (maxTop > minTop) { ft = static_cast<uint16_t>(random(minTop, maxTop + 1)); }
+        if (maxLeft > minLeft) { lt = static_cast<uint16_t>(random(minLeft, maxLeft + 1)); }
 
         _clock->moveTo({lt, ft, 0}); // Az óra új helyre mozgatása beégés megelőzéshez, képernyőn belül tartva.
     }
@@ -759,9 +752,7 @@ void Display::_time(bool redraw) {
 
 void Display::_volume() {
 #    ifndef HIDE_VOL
-    if (_volwidget) {
-        _volwidget->setVolume(config.store.volume);
-    }
+    if (_volwidget) { _volwidget->setVolume(config.store.volume); }
 #    endif
     if (_mode == VOL) {
         timekeeper.waitAndReturnPlayer(2);

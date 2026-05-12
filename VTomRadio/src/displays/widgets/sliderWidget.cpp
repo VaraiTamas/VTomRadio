@@ -22,7 +22,12 @@ void SliderWidget::setValue(uint32_t val) {
 }
 
 void SliderWidget::_drawslider() {
-    uint16_t valwidth = map(_value, 0, _max, 0, _width - _outlined * 2);
+    uint16_t innerWidth = (_width > _outlined * 2) ? (_width - _outlined * 2) : 0;
+    uint16_t valwidth = 0;
+    if (_max > 0 && innerWidth > 0) {
+        uint32_t clampedValue = min(_value, _max);
+        valwidth = map(clampedValue, 0, _max, 0, innerWidth);
+    }
     if (_oldvalwidth == valwidth) { return; }
     dsp.fillRect(_config.left + _outlined + min(valwidth, _oldvalwidth), _config.top + _outlined, abs(_oldvalwidth - valwidth), _height - _outlined * 2, _oldvalwidth > valwidth ? _bgcolor : _fgcolor);
     _oldvalwidth = valwidth;
@@ -33,7 +38,12 @@ void SliderWidget::_draw() {
     _clear();
     if (!_active) { return; }
     if (_outlined) { dsp.drawRect(_config.left, _config.top, _width, _height, _oucolor); }
-    uint16_t valwidth = map(_value, 0, _max, 0, _width - _outlined * 2);
+    uint16_t innerWidth = (_width > _outlined * 2) ? (_width - _outlined * 2) : 0;
+    uint16_t valwidth = 0;
+    if (_max > 0 && innerWidth > 0) {
+        uint32_t clampedValue = min(_value, _max);
+        valwidth = map(clampedValue, 0, _max, 0, innerWidth);
+    }
     dsp.fillRect(_config.left + _outlined, _config.top + _outlined, valwidth, _height - _outlined * 2, _fgcolor);
 }
 

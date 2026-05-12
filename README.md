@@ -108,8 +108,20 @@ A névnapok megjelenítése a WEB-es felületen kikapcsolható options/ SYSTEM->
 (I2C capacitive touch FT6236) https://www.aliexpress.com/item/1005007789737257.html    
    - 3D nyomtatási terv --> https://www.printables.com/model/1621877-yoradio-case-for-ips-ctp-35-inch-spi-red-ili9488-f
 
-## Version history:  
-### v0.1.2
+## Version history: 
+
+### v0.0.5
+- I2S audio könyvtár frissítése V3.4.5-re. https://github.com/schreibfaul1/ESP32-audioI2S
+- Induláskor a kijelző fényereje fokozatosan növekszik a beállított értékig (fade in effekt).
+- #define USE_SERIAL_LITTLEFS  // Enable Serial LittleFS for maintenance mode (Botfai Tibor)
+### v0.0.4
+- Custom_themes könyvtár hozzáadása a gyári témák mellett egyedi témák tárolásához.
+- #define IR_NEC_ONLY  // Build only NEC decoder sources from IRremoteESP8266 (faster/smaller build)
+- Heapbar túlfutása a kijelzőn, javítva.
+### v0.0.3 
+- Képernyővédő módban az óra kifutott a kijelzőről, javítva.
+- Képernyőmódból visszatérve az óra nem ment vissza a helyére, javítva.
+### v0.0.2
 - ST7796 kijelző támogatás hozzáadása.
 - Kijelző és érintőképernyő meghajtó módosítása.
 - WI-FI widget color témájának módosítása.

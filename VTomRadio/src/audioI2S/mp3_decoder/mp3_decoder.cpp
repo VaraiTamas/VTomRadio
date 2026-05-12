@@ -1101,7 +1101,7 @@ int32_t MP3Decoder::decode(uint8_t* inbuf, int32_t* bytesLeft, int32_t* outbuf) 
             MP3_LOG_DEBUG("APETAGEX gefunden");
             uint32_t version = inbuf[8] | (inbuf[9] << 8) | (inbuf[10] << 16) | (inbuf[11] << 24);
             uint32_t size = inbuf[12] | (inbuf[13] << 8) | (inbuf[14] << 16) | (inbuf[15] << 24);
-            MP3_LOG_DEBUG("version %i size %i", version, size);
+            MP3_LOG_DEBUG("version %u size %u", version, size);
             *bytesLeft -= min(*bytesLeft, (int32_t)size);
             return MP3_NEXT_FRAME;
         }

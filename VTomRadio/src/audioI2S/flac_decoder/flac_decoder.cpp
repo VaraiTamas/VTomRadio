@@ -158,7 +158,7 @@ void FlacDecoder::alignToByte() {
 //              F L A C - D E C O D E R
 //----------------------------------------------------------------------------------------------------------------------
 void FlacDecoder::setRawBlockParams(uint8_t channels, uint32_t sampleRate, uint8_t BPS, uint32_t tsis, uint32_t AuDaLength) {
-    FLAC_LOG_DEBUG("channels %i, sampleRate %i, BPS %i, tsis %i, AuDaLength %i", channels, sampleRate, BPS, tsis, AuDaLength);
+    FLAC_LOG_DEBUG("channels %u, sampleRate %u, BPS %u, tsis %u, AuDaLength %u", channels, sampleRate, BPS, tsis, AuDaLength);
     FLACMetadataBlock->numChannels = channels;
     FLACMetadataBlock->sampleRate = sampleRate;
     FLACMetadataBlock->bitsPerSample = BPS;
@@ -544,7 +544,7 @@ int32_t FlacDecoder::parseMetaDataBlockHeader(uint8_t* inbuf, int16_t nBytes) {
                 FLACMetadataBlock->maxblocksize = maxBlocksize;
 
                 if (maxBlocksize > m_maxBlocksize) {
-                    FLAC_LOG_ERROR("s_blocksize is too big: %i bytes, max block size: %i", maxBlocksize, m_maxBlocksize);
+                    FLAC_LOG_ERROR("s_blocksize is too big: %u bytes, max block size: %u", maxBlocksize, m_maxBlocksize);
                     return FLAC_ERR;
                 }
 
@@ -597,11 +597,11 @@ int32_t FlacDecoder::parseMetaDataBlockHeader(uint8_t* inbuf, int16_t nBytes) {
                 const uint32_t vorbisBlockEnd = (uint32_t)pos + (uint32_t)blockLength;
                 vendorLength = readLE32(inbuf + pos);
                 if (vendorLength > FLAC_MAX_VORBIS_VENDOR_LENGTH) {
-                    FLAC_LOG_ERROR("Flac Vorbis vendor string too long: %i bytes, max: %i", vendorLength, FLAC_MAX_VORBIS_VENDOR_LENGTH);
+                    FLAC_LOG_ERROR("Flac Vorbis vendor string too long: %u bytes, max: %u", vendorLength, FLAC_MAX_VORBIS_VENDOR_LENGTH);
                     return FLAC_ERR;
                 }
                 if (vendorLength > (uint32_t)blockLength - 8) {
-                    FLAC_LOG_ERROR("Flac invalid Vorbis vendor string length: %i, block length: %i", vendorLength, blockLength);
+                    FLAC_LOG_ERROR("Flac invalid Vorbis vendor string length: %u, block length: %i", vendorLength, blockLength);
                     return FLAC_ERR;
                 }
 
@@ -620,17 +620,17 @@ int32_t FlacDecoder::parseMetaDataBlockHeader(uint8_t* inbuf, int16_t nBytes) {
                 commemtStringLength = 0;
                 for (uint32_t i = 0; i < userCommentListLength; i++) {
                     if ((uint32_t)pos + 4 > vorbisBlockEnd) {
-                        FLAC_LOG_ERROR("Flac invalid Vorbis comment list length: %i", userCommentListLength);
+                        FLAC_LOG_ERROR("Flac invalid Vorbis comment list length: %u", userCommentListLength);
                         return FLAC_ERR;
                     }
 
                     commemtStringLength = readLE32(inbuf + pos);
                     if (commemtStringLength > FLAC_MAX_VORBIS_COMMENT_ENTRY_LENGTH) {
-                        FLAC_LOG_ERROR("Flac Vorbis comment string too long: %i bytes, max: %i", commemtStringLength, FLAC_MAX_VORBIS_COMMENT_ENTRY_LENGTH);
+                        FLAC_LOG_ERROR("Flac Vorbis comment string too long: %u bytes, max: %u", commemtStringLength, FLAC_MAX_VORBIS_COMMENT_ENTRY_LENGTH);
                         return FLAC_ERR;
                     }
                     if (commemtStringLength > vorbisBlockEnd - ((uint32_t)pos + 4)) {
-                        FLAC_LOG_ERROR("Flac invalid Vorbis comment string length: %i", commemtStringLength);
+                        FLAC_LOG_ERROR("Flac invalid Vorbis comment string length: %u", commemtStringLength);
                         return FLAC_ERR;
                     }
 
@@ -673,10 +673,10 @@ int32_t FlacDecoder::parseMetaDataBlockHeader(uint8_t* inbuf, int16_t nBytes) {
                     }
                     if (isVorbisField(comment, commemtStringLength, "METADATA_BLOCK_PICTURE", "metadata_block_picture", 23)) {
                         if (commemtStringLength < 23) {
-                            FLAC_LOG_ERROR("Flac invalid METADATA_BLOCK_PICTURE length: %i", commemtStringLength);
+                            FLAC_LOG_ERROR("Flac invalid METADATA_BLOCK_PICTURE length: %u", commemtStringLength);
                             return FLAC_ERR;
                         }
-                        FLAC_LOG_VERBOSE("METADATA_BLOCK_PICTURE found, commemtStringLength %i", commemtStringLength);
+                        FLAC_LOG_VERBOSE("METADATA_BLOCK_PICTURE found, commemtStringLength %u", commemtStringLength);
                         m_flacBlockPicLen = commemtStringLength - 23;
                         m_flacBlockPicPos = m_flacCurrentFilePos + pos + 4 + 23;
                         m_flacBlockPicLenUntilFrameEnd = 0;
@@ -692,7 +692,7 @@ int32_t FlacDecoder::parseMetaDataBlockHeader(uint8_t* inbuf, int16_t nBytes) {
                         }
                     }
                     pos += 4 + commemtStringLength;
-                    FLAC_LOG_VERBOSE("nBytes %i, pos %i, commemtStringLength %i", nBytes, pos, commemtStringLength);
+                    FLAC_LOG_VERBOSE("nBytes %i, pos %u, commemtStringLength %u", nBytes, pos, commemtStringLength);
                 }
                 if (vb[1].valid() && vb[0].valid()) { // artist and title
                     m_flacStreamTitle.assign(vb[1].c_get());
@@ -1062,7 +1062,7 @@ int8_t FlacDecoder::decodeFrame(uint8_t* inbuf, int32_t* bytesLeft) {
         return FLAC_ERR;
     }
     if (decodedBlockSize == 0 || decodedBlockSize > FLAC_MAX_BLOCKSIZE) {
-        FLAC_LOG_ERROR("Flac block size too large: %i samples, max: %i", decodedBlockSize, FLAC_MAX_BLOCKSIZE);
+        FLAC_LOG_ERROR("Flac block size too large: %u samples, max: %i", decodedBlockSize, FLAC_MAX_BLOCKSIZE);
         return FLAC_ERR;
     }
     m_numOfOutSamples = decodedBlockSize;
@@ -1075,7 +1075,7 @@ int8_t FlacDecoder::decodeFrame(uint8_t* inbuf, int32_t* bytesLeft) {
     for (int32_t i = 0; i < FLAC_MAX_CHANNELS; i++) {
         if (m_samplesBuffer[i].size() == m_numOfOutSamples) continue;
         if (!m_samplesBuffer[i].calloc_array(m_numOfOutSamples, "m_samplesBuffer") || !m_samplesBuffer[i].valid()) {
-            FLAC_LOG_ERROR("not enough memory to allocate flacdecoder buffer %i, samples: %i", i, m_numOfOutSamples);
+            FLAC_LOG_ERROR("not enough memory to allocate flacdecoder buffer %i, samples: %u", i, m_numOfOutSamples);
             m_samplesBuffer[i].reset();
             m_valid = false;
             return FLAC_ERR;

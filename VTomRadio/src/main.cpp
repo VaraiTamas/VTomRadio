@@ -75,7 +75,6 @@ void setupOTA() {
 extern IRrecv         irrecv;
 extern decode_results irResults;
 #endif
-// void checkMaintenanceMode();
 
 static TaskHandle_t clockTtsTaskHandle = nullptr;
 
@@ -96,8 +95,36 @@ static void startClockTtsTask() {
     xTaskCreatePinnedToCore(clockTtsTask, "clock_tts", 4096, nullptr, 1, &clockTtsTaskHandle, targetCore);
 }
 
-//#define MAINTENANCE_PIN 39 // pl. GPIO0 (boot gomb is lehet)
-bool maintenanceMode = false;
+static void hideDisplayBacklight() {
+#if BRIGHTNESS_PIN != 255
+    display.setBrightnessPercent(0);
+#endif
+}
+
+static void revealDisplayBacklight(bool forceOn) {
+#if BRIGHTNESS_PIN != 255
+    uint8_t targetBrightness = 0;
+
+    if (forceOn) {
+        targetBrightness = config.store.brightness > 0 ? config.store.brightness : 100;
+    } else if (config.store.dspon) {
+        targetBrightness = config.store.brightness;
+    }
+
+    if (targetBrightness == 0) return;
+
+    constexpr uint8_t fadeStep = 2;
+    for (uint8_t level = 0; level < targetBrightness;) {
+        display.setBrightnessPercent(level);
+        delay(12);
+        uint8_t nextLevel = level + fadeStep;
+        level = nextLevel > targetBrightness ? targetBrightness : nextLevel;
+    }
+    display.setBrightnessPercent(targetBrightness);
+#else
+    (void)forceOn;
+#endif
+}
 
 static bool serviceMaintenanceMode() {
     static bool maintenanceScreenShown = false;
@@ -124,6 +151,8 @@ void setup() {
     irWakeup();
 #endif
 
+#ifdef SERIAL_LITTLEFS_ENABLE
+    Serial.println("Serial LittleFS enabled");
 serial_littlefs_begin(Serial);   //Botfai Tibor: sor hozzáadva a serial_littlefs kezeléséhez.
 
 // Boot window: ESP 4 másodpercig várja a maintenance kapcsolatot.
@@ -144,6 +173,7 @@ serial_littlefs_begin(Serial);   //Botfai Tibor: sor hozzáadva a serial_littlef
         delay(5);
     }
 }
+#endif
 
 #if (BRIGHTNESS_PIN != 255) // backlight plugin
     Serial.printf("Exists? %p\n", &backlightPlugin);
@@ -155,6 +185,7 @@ serial_littlefs_begin(Serial);   //Botfai Tibor: sor hozzáadva a serial_littlef
     pm.on_setup(); // pluginsManager
     config.init();
     display.init();
+    revealDisplayBacklight(false);
 
     player.init();
     network.begin();
@@ -166,6 +197,7 @@ serial_littlefs_begin(Serial);   //Botfai Tibor: sor hozzáadva a serial_littlef
             if (serviceMaintenanceMode()) continue;
             delay(10);
         }
+        revealDisplayBacklight(true);
         return;
     }
     if (SDC_CS != 255) {
@@ -175,11 +207,13 @@ serial_littlefs_begin(Serial);   //Botfai Tibor: sor hozzáadva a serial_littlef
     config.initPlaylistMode();
     netserver.begin();
     initControls();
+    hideDisplayBacklight();
     display.putRequest(DSP_START);
     while (!display.ready()) {
         if (serviceMaintenanceMode()) continue;
         delay(10);
     }
+    revealDisplayBacklight(false);
 #if USE_OTA
     setupOTA();
 #endif
