@@ -98,6 +98,15 @@ Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not 
 #define IR_PIN 2  //38
 #define IR_NEC_ONLY  // Build only NEC decoder sources from IRremoteESP8266 (faster/smaller build)
 
+/*----- Sleep functions -----*/
+/*----- A WAKE_PIN helyett mostantól két pin állítható be az ébresztéshez: WAKE_PIN1 és WAKE_PIN2 -----*/
+/*----- Így távirányítóval és egy másik gombbal is felébreszthető az eszköz. -----*/
+/*----- Instead of WAKE_PIN, you can now set two pins for wake-up: WAKE_PIN1 and WAKE_PIN2 -----*/
+/*----- This way, you can wake up the device with a remote control and another button. -----*/
+//#define BTN_MODE ENC_BTNB
+#define WAKE_PIN1 IR_PIN
+// #define WAKE_PIN2 ENC2_BTNB
+
 /*----- SD CARD -----*/
 // #define SDC_CS     18
 // #define SDSPISPEED 4000000 /* 4MHz - Slower speed to prevent display flicker on shared SPI bus */
@@ -124,15 +133,6 @@ When music is not playing (stopped or volume is 0), the pin is set to LOW. This 
 /*----- Ha ez definiálva van a rádió indításakor, mindig az első csatorna lesz beállítva. -----*/
 /*----- If this is defined at radio startup, the first channel will always be set. -----*/
 //#define ALWAYS_START_FROM_FIRST
-
-/*----- Sleep functions -----*/
-/*----- A WAKE_PIN helyett mostantól két pin állítható be az ébresztéshez: WAKE_PIN1 és WAKE_PIN2 -----*/
-/*----- Így távirányítóval és egy másik gombbal is felébreszthető az eszköz. -----*/
-/*----- Instead of WAKE_PIN, you can now set two pins for wake-up: WAKE_PIN1 and WAKE_PIN2 -----*/
-/*----- This way, you can wake up the device with a remote control and another button. -----*/
-//#define BTN_MODE ENC_BTNB
-#define WAKE_PIN1 IR_PIN
-// #define WAKE_PIN2 ENC2_BTNB
 
 /*----- by Zsolt Simon -----*/
 /*----- Tested on Synology NAS ----- */
