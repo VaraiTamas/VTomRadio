@@ -130,24 +130,34 @@ void my_audio_info(Audio::msg_t m) {
     case Audio::evt_info:
     {
       // Formátum felismerés
-      if (strstr(msg, "MPEG-1 Layer III") != nullptr) {
-        config.setBitrateFormat(BF_MP3);
-        display.putRequest(DBITRATE);
+      BitrateFormat newFmt = BF_UNKNOWN;
+      const bool isMp3Info =
+        strstr(msg, "MPEG-1 Layer III") != nullptr ||
+        strstr(msg, "MPEG-2 Layer III") != nullptr ||
+        strstr(msg, "MPEG-2.5 Layer III") != nullptr ||
+        ((strstr(msg, "MPEG") != nullptr || strstr(msg, "mpeg") != nullptr) && strstr(msg, "Layer III") != nullptr) ||
+        strstr(msg, "MP3") != nullptr || strstr(msg, "mp3") != nullptr;
+
+      if (isMp3Info) {
+        newFmt = BF_MP3;
       } else if (strstr(msg, "AAC") != nullptr) {
-        config.setBitrateFormat(BF_AAC);
-        display.putRequest(DBITRATE);
+        newFmt = BF_AAC;
       } else if (strstr(msg, "FLAC") != nullptr) {
-        config.setBitrateFormat(BF_FLAC);
-        display.putRequest(DBITRATE);
+        newFmt = BF_FLAC;
       } else if (strstr(msg, "WAV") != nullptr) {
-        config.setBitrateFormat(BF_WAV);
-        display.putRequest(DBITRATE);
+        newFmt = BF_WAV;
       } else if (strstr(msg, "OGG") != nullptr || strstr(msg, "VORBIS") != nullptr) {
-        config.setBitrateFormat(BF_OGG);
-        display.putRequest(DBITRATE);
+        newFmt = BF_OGG;
       } else if (strstr(msg, "OPUS") != nullptr) {
-        config.setBitrateFormat(BF_OPU);
-        display.putRequest(DBITRATE);
+        newFmt = BF_OPU;
+      }
+
+      if (newFmt != BF_UNKNOWN) {
+        if (config.configFmt != newFmt) {
+          config.setBitrateFormat(newFmt);
+          display.putRequest(DBITRATE);
+        }
+        netserver.requestOnChange(BITRATE, 0);
       }
 
       // SD mód: "stream ready" → seek a mentett pozícióra

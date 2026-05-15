@@ -403,6 +403,7 @@ bool Config::prepareForPlaying(uint16_t stationId) {
     station.bitrate = 0;
     setBitrateFormat(BF_UNKNOWN);
     display.putRequest(DBITRATE);
+    netserver.requestOnChange(BITRATE, 0);
     display.putRequest(NEWSTATION);
     display.putRequest(NEWMODE, PLAYER);
     netserver.requestOnChange(STATION, 0);

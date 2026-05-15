@@ -1,6 +1,6 @@
 
 /*****************************************************************************************************************************************************
-    audio.cpp
+    audio.cpp  Módosítás!
 
     Created on: 28.10.2018                                                                                                  */
 char audioI2SVers[] = "\
@@ -5462,6 +5462,15 @@ void Audio::setDecoderItems() {
     setChannels(m_decoder->getChannels());
     setSampleRate(m_decoder->getSampleRate());
     setBitsPerSample(m_decoder->getBitsPerSample());
+ // Módosítás: A bitráta lekérése a dekódertől, és ha még nincs beállítva, akkor beállítása és megjelenítése   
+
+    uint32_t decoderBitRate = m_decoder->getBitRate();
+    if (!m_nominal_bitrate && decoderBitRate > 0) {
+        m_nominal_bitrate = decoderBitRate;
+        info(*this, evt_bitrate, "%i", m_nominal_bitrate);
+        info(*this, evt_info, "Bitrate (b/s): %lu", m_nominal_bitrate);
+    }
+// Módosítás vége
     if (m_decoder->arg1()) info(*this, evt_info, "%s", m_decoder->arg1());
     if (m_decoder->getAudioDataStart() > 0) { // only flac-ogg, native flac sets audioDataStart in readFlacHeader()
         m_audioDataStart = m_decoder->getAudioDataStart();
@@ -5719,7 +5728,13 @@ void Audio::calculateAudioTime(uint16_t bytesDecoderIn, uint16_t samples_decoder
             double instBitRate = (m_cat.deltaBytesIn * 8000.0) / delta_t;
             m_cat.counter++;
             m_cat.avrBitRate += (instBitRate - m_cat.avrBitRate) / m_cat.counter;
-            if ((abs(m_cat.avrBitRate - m_cat.oldAvrBitrate < 50)) && !m_cat.avrBitrateStable && m_cat.avrBitRate > 1000) {
+  // Módosítás kezdete          
+  // if ((abs(m_cat.avrBitRate - m_cat.oldAvrBitrate < 50)) && !m_cat.avrBitrateStable && m_cat.avrBitRate > 1000) {
+            uint32_t bitrateDelta = (m_cat.avrBitRate >= m_cat.oldAvrBitrate)
+                                      ? (m_cat.avrBitRate - m_cat.oldAvrBitrate)
+                                      : (m_cat.oldAvrBitrate - m_cat.avrBitRate);
+            if ((bitrateDelta < 50) && !m_cat.avrBitrateStable && m_cat.avrBitRate > 1000) {
+  //Módosítás vége              
                 m_cat.brCounter++;
                 if (m_cat.brCounter > 6) {
                     m_cat.avrBitrateStable = m_cat.avrBitRate;
