@@ -272,7 +272,6 @@ void Config::_setupVersion() {
         case 2: saveValue(&store.rssiAsText, false); break;
         case 3: break;
         case 4: saveValue(&store.serialLittlefsEnabled, true); break;
-        case 5: saveValue(&store.serialLittlefsEnabled, true); break;
     }
     currentVersion++;
     saveValue(&store.version, currentVersion);

@@ -279,7 +279,8 @@ bool CommandHandler::exec(const char* command, const char* value, uint8_t cid) {
         return true;
     }
     if (strEquals(command, "seriallittlefs")) {
-        config.saveValue(&config.store.serialLittlefsEnabled, static_cast<bool>(atoi(value)));
+        config.saveValue(&config.store.serialLittlefsEnabled, static_cast<bool>(atoi(value)),true, false);
+        delay(100);
         netserver.requestOnChange(GETSYSTEM, cid);
         return true;
     }

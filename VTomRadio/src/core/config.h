@@ -42,7 +42,7 @@
 #    define ESP_ARDUINO_3 1
 #endif
 
-#define CONFIG_VERSION 6
+#define CONFIG_VERSION 4
 
 enum playMode_e : uint8_t { // DLNA mod
     PM_WEB = 0,

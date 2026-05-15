@@ -130,8 +130,8 @@ When music is not playing (stopped or volume is 0), the pin is set to LOW. This 
 /*----- Így távirányítóval és egy másik gombbal is felébreszthető az eszköz. -----*/
 /*----- Instead of WAKE_PIN, you can now set two pins for wake-up: WAKE_PIN1 and WAKE_PIN2 -----*/
 /*----- This way, you can wake up the device with a remote control and another button. -----*/
- //#define BTN_MODE ENC_BTNB
- // #define WAKE_PIN1 IR_PIN
+//#define BTN_MODE ENC_BTNB
+#define WAKE_PIN1 IR_PIN
 // #define WAKE_PIN2 ENC2_BTNB
 
 /*----- by Zsolt Simon -----*/

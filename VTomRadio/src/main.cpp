@@ -151,11 +151,18 @@ static bool serviceMaintenanceMode() {
 }
 
 void setup() {
-    Serial.begin(460800);	//	115200 - ezt is átírtam, biztonsággal működik
+    Serial.begin(460800); //	115200 - ezt is átírtam, biztonsággal működik
     delay(100);
     EEPROM.begin(EEPROM_SIZE);
-    serial_littlefs_begin(Serial);
+
     serialLittlefsEnabled = loadSerialLittlefsEnabledFromEeprom();
+    if (serialLittlefsEnabled) {
+        Serial.println("Serial LittleFS is enabled, initializing...");
+
+        serial_littlefs_begin(Serial);
+    } else {
+        Serial.println("Serial LittleFS is disabled, skipping initialization.");
+    }
 
 #if IR_PIN != 255
     irQueue = xQueueCreate(4, sizeof(IRCommand));
