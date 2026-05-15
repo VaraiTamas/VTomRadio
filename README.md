@@ -4,6 +4,7 @@
 ### A program alapja ёRadio v0.9.720 https://github.com/e2002/yoradio   
 Főbb változtatások:
 - LovyanGFX könyvtár használata az AdafruitGFX könyvtár helyett.
+- A program TrueType fontokat használ VLW -re konvertált formátumban, élsimítással.
 - LittleFS fájlrendszer használata a SPIFFS helyett.
 - Kijelző és érintőképernyő meghajtó módosítása.
 - Új widgetek bevezetése.
@@ -28,6 +29,7 @@ Ez a verzió kizárólag az ESP32-S3-devkit-C1 N16R8, 44 lábú modulhoz és
 - ST7796 480x320 felbontású SPI (LCD)   
 kijelzőhöz készült és csak az audioI2S DAC eszközzel működik megfelelően, [PCM5102A](PCM5102A) -val tesztelve!
 - A program működéséhez 16MB flash memória és 8MB PSRAM szükséges!
+- Arduino Core 3.3.7 használatával tesztelve. Arduino Core 3.3.8 verzióval nem működik megfelelően !!!   
 
 A programhoz ajánlott a Visual Studio Code szerkesztő használata a PlatformIO plugin-nal, de az Arduino IDE-vel is működik. 
 
