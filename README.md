@@ -109,13 +109,16 @@ A névnapok megjelenítése a WEB-es felületen kikapcsolható options/ SYSTEM->
    - 3D nyomtatási terv --> https://www.printables.com/model/1621877-yoradio-case-for-ips-ctp-35-inch-spi-red-ili9488-f
 
 ## Version history: 
-
+### v0.0.6
+- Bitrate text betöltési idejének javítása a kijelzőn és a WEB UI-n. (by Andrzej Jaroszuk)
 ### v0.0.5
 - I2S audio könyvtár frissítése V3.4.5-re. https://github.com/schreibfaul1/ESP32-audioI2S
 - Induláskor a kijelző fényereje fokozatosan növekszik a beállított értékig (fade in effekt).
 - #define USE_SERIAL_LITTLEFS  // Enable Serial LittleFS for maintenance mode (Botfai Tibor)
 ### v0.0.4
-- Custom_themes könyvtár hozzáadása a gyári témák mellett egyedi témák tárolásához.
+- Custom_themes könyvtár hozzáadása az eredeti téma mellett, egyedi témák tárolásához.
+   - MB_fallout3_pipboy_2026-05-08.csv  (by Maciej Bednarski)
+   - MB_monochrome_oled_2026-05-08.csv  (by Maciej Bednarski)
 - #define IR_NEC_ONLY  // Build only NEC decoder sources from IRremoteESP8266 (faster/smaller build)
 - Heapbar túlfutása a kijelzőn, javítva.
 ### v0.0.3 
