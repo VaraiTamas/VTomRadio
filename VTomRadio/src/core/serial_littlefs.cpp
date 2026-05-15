@@ -5,6 +5,7 @@
 #include <WiFi.h>
 #include <FS.h>
 #include <mbedtls/base64.h>
+#include <vector>
 
 
 namespace {
@@ -197,7 +198,7 @@ void handleRead(const String& rawPath) {
   }
 
   sendLine("READ_BEGIN|" + path + "|" + String((uint32_t)f.size()));
-  uint8_t buf[384];
+  uint8_t buf[768];
   while (f.available()) {
     const size_t n = f.read(buf, sizeof(buf));
     if (!n) break;
@@ -264,8 +265,6 @@ void handleWriteData(const String& b64) {
       return;
     }
     g_writeReceived += written;
-    g_writeFile.flush();
-    delay(1);
   } else if (decoded) {
     free(decoded);
   }
@@ -301,13 +300,69 @@ void handleWriteAbort() {
   sendOk("WRITE_ABORT", "idle");
 }
 
+bool collectRemoveTargets(const String& path, std::vector<String>& files, std::vector<String>& dirs) {
+  File entry = LittleFS.open(path);
+  if (!entry) return false;
+
+  if (!entry.isDirectory()) {
+    entry.close();
+    files.push_back(path);
+    return true;
+  }
+
+  File child = entry.openNextFile();
+  while (child) {
+    String childPath = String(child.path());
+    if (!childPath.length()) childPath = String(child.name());
+    if (!childPath.startsWith("/")) childPath = path + "/" + childPath;
+
+    const bool childIsDir = child.isDirectory();
+    child.close();
+
+    if (childIsDir) {
+      collectRemoveTargets(sanitizePath(childPath), files, dirs);
+    } else {
+      files.push_back(sanitizePath(childPath));
+    }
+
+    child = entry.openNextFile();
+  }
+
+  entry.close();
+  dirs.push_back(path);
+  return true;
+}
+
+bool removeRecursive(const String& rawPath) {
+  const String path = sanitizePath(rawPath);
+  if (path == "/" || path.length() == 0) return false;
+
+  std::vector<String> files;
+  std::vector<String> dirs;
+  if (!collectRemoveTargets(path, files, dirs)) return false;
+
+  bool ok = true;
+  for (const String& filePath : files) {
+    if (LittleFS.exists(filePath) && !LittleFS.remove(filePath)) ok = false;
+    delay(0);
+  }
+
+  for (auto it = dirs.rbegin(); it != dirs.rend(); ++it) {
+    const String& dirPath = *it;
+    if (dirPath != "/" && LittleFS.exists(dirPath) && !LittleFS.rmdir(dirPath)) ok = false;
+    delay(0);
+  }
+
+  return ok;
+}
+
 void handleDelete(const String& rawPath) {
   const String path = sanitizePath(rawPath);
   if (!LittleFS.exists(path)) {
     sendErr("DELETE", "not_found");
     return;
   }
-  if (!LittleFS.remove(path)) {
+  if (!removeRecursive(path)) {
     sendErr("DELETE", "remove_failed");
     return;
   }
@@ -380,14 +435,14 @@ void processCommand(const String& line) {
     if (a == "READ") { handleRead(c); return; }
     if (a == "DELETE") { handleDelete(c); return; }
     if (a == "RMDIR") {
-    const String path = sanitizePath(c);
-    if (LittleFS.rmdir(path)) {
-        sendOk("RMDIR", path); // <--- Ez küldi a visszaigazolást a Pythonnak
-    } else {
+      const String path = sanitizePath(c);
+      if (removeRecursive(path)) {
+        sendOk("RMDIR", path);
+      } else {
         sendErr("RMDIR", "rmdir_failed");
+      }
+      return;
     }
-    return;
-}
     if (a == "MKDIR") { handleMkdir(c); return; }
     if (a == "EXISTS") { handleExists(c); return; }
     if (a == "WRITE_DATA") { handleWriteData(c); return; }
@@ -422,7 +477,7 @@ void serial_littlefs_poll() {
       processCommand(line);
       continue;
     }
-    if (g_rxLine.length() < 2048) g_rxLine += ch;
+    if (g_rxLine.length() < 4096) g_rxLine += ch;
   }
 
   if (g_active && g_lastActivityMs > 0 && (millis() - g_lastActivityMs) > kMaintenanceIdleTimeoutMs) {

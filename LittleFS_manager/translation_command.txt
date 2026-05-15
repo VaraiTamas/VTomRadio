@@ -1,1 +1,1 @@
-py -m PyInstaller --noconsole --onefile LittleFS-SPIFFS_Partition_Manager_v0.3.3.py
+py -m PyInstaller --noconsole --onefile LittleFS-SPIFFS_Partition_Manager_v0.3.4.py
