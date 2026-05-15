@@ -271,6 +271,8 @@ void Config::_setupVersion() {
         case 1: saveValue(&store.encodersIndependent, false); break;
         case 2: saveValue(&store.rssiAsText, false); break;
         case 3: break;
+        case 4: saveValue(&store.serialLittlefsEnabled, true); break;
+        case 5: saveValue(&store.serialLittlefsEnabled, true); break;
     }
     currentVersion++;
     saveValue(&store.version, currentVersion);
@@ -1125,10 +1127,10 @@ void Config::resetSystem(const char* val, uint8_t clientId) {
         saveValue(&store.vuPeakInitMarker, static_cast<uint8_t>(0xA5), false);
         saveValue(&store.vuBidirectional, false, false);
         saveValue(&store.softapdelay, (uint8_t)0, false);
-        // saveValue(&store.abuff, (uint16_t)(VS1053_CS == 255 ? 7 : 10), false);
         saveValue(&store.watchdog, true);
         saveValue(&store.stallWatchdog, true, false);
-        saveValue(&store.nameday, true); // Módosítás "nameday"
+        saveValue(&store.serialLittlefsEnabled, true, false);
+        saveValue(&store.nameday, true);
         saveValue(&store.clockTtsEnabled, false, false);
         saveValue(store.clockTtsLanguage, "HU", sizeof(store.clockTtsLanguage), false);
         saveValue(&store.clockTtsIntervalMinutes, static_cast<uint16_t>(15));
@@ -1299,6 +1301,7 @@ void Config::setDefaults() {
     store.directChannelChange = false;
     store.stationsListReturnTime = 3;
     store.stallWatchdog = true;
+    store.serialLittlefsEnabled = true;
 #if TS_MODEL == TS_MODEL_FT6X36
     store.xTouchMirroring = false;
     store.yTouchMirroring = false;
@@ -1883,6 +1886,7 @@ void Config::bootInfo() {
     BOOTLOG("fadeStartDelay: %4s", fmtThousands(store.fadeStartDelay));
     BOOTLOG("fadeTarget    : %4s", fmtThousands(store.fadeTarget));
     BOOTLOG("fadeStep      : %4s", fmtThousands(store.fadeStep));
+    BOOTLOG("Serial LittleFS : %s", store.serialLittlefsEnabled ? "true" : "false");
     BOOTLOG("------------------------------------------------");
     BOOTLOG("----------------- HEAP AND PSRAM ---------------");
     BOOTLOG("Total heap : %10s byte", fmtThousands(ESP.getHeapSize()));

@@ -66,7 +66,7 @@ input[type=text],input[type=password]{width:170px;background: #272727;color: #4b
 </div>
 </section>
 <p><a href="/emergency">emergency firmware uploader</a></p>
-<div id="copy">powered by <a target="_blank" href="https://github.com/VaraiTamas/yoRadio">VTom Radio</a><span id="version"></span></div>
+<div id="copy">powered by <a target="_blank" href="https://github.com/VaraiTamas/VTomRadio.git">VTom Radio</a><span id="version"></span></div>
 </body>
 <script>
 const connectedMode = (typeof isStaConnected !== 'undefined') ? !!isStaConnected : (playMode=='player');
@@ -202,7 +202,7 @@ class NetServer {
     requestType_e request;
     QueueHandle_t nsQueue;
     char _wscmd[65], _wsval[65];
-    char wsBuf[BUFLEN*3];
+    char wsBuf[BUFLEN*5];
     int rssi;
     uint32_t playerBufMax;
     void getPlaylist(uint8_t clientId);

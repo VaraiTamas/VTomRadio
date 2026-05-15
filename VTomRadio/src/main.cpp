@@ -77,6 +77,14 @@ extern decode_results irResults;
 #endif
 
 static TaskHandle_t clockTtsTaskHandle = nullptr;
+static bool         serialLittlefsEnabled = true;
+
+static bool loadSerialLittlefsEnabledFromEeprom() {
+    config.eepromRead(EEPROM_START, config.store);
+    if (config.store.config_set != 0) return true;
+    if (config.store.version != CONFIG_VERSION) return true;
+    return config.store.serialLittlefsEnabled;
+}
 
 static void clockTtsTask(void* /*param*/) {
     while (true) {
@@ -127,6 +135,7 @@ static void revealDisplayBacklight(bool forceOn) {
 }
 
 static bool serviceMaintenanceMode() {
+    if (!serialLittlefsEnabled) return false;
     static bool maintenanceScreenShown = false;
     serial_littlefs_poll();
     if (!serial_littlefs_is_active()) {
@@ -142,8 +151,11 @@ static bool serviceMaintenanceMode() {
 }
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(460800);	//	115200 - ezt is átírtam, biztonsággal működik
+    delay(100);
     EEPROM.begin(EEPROM_SIZE);
+    serial_littlefs_begin(Serial);
+    serialLittlefsEnabled = loadSerialLittlefsEnabledFromEeprom();
 
 #if IR_PIN != 255
     irQueue = xQueueCreate(4, sizeof(IRCommand));
@@ -151,29 +163,26 @@ void setup() {
     irWakeup();
 #endif
 
-#ifdef SERIAL_LITTLEFS_ENABLE
-    Serial.println("Serial LittleFS enabled");
-serial_littlefs_begin(Serial);   //Botfai Tibor: sor hozzáadva a serial_littlefs kezeléséhez.
-
-// Boot window: ESP 4 másodpercig várja a maintenance kapcsolatot.
-// A Python HELLO → BEGIN kézfogással lép be; END paranccsal vagy idle timeout
-// után a maintenance mód le is tud zárni, és a normál boot folytatódik.
-{
-    uint32_t bootEnd = millis() + 4000;
-    while (millis() < bootEnd) {
-        serial_littlefs_poll();
-        if (serial_littlefs_is_active()) {
-            display_show_maintenance_screen();
-            while (serial_littlefs_is_active()) {
+    if (serialLittlefsEnabled) {
+        // Boot window: ESP 4 masodpercig varja a maintenance kapcsolatot.
+        // A Python HELLO -> BEGIN kezfogassal lep be; END paranccsal vagy idle timeout
+        // utan a maintenance mod le is tud zarni, es a normal boot folytatodik.
+        {
+            uint32_t bootEnd = millis() + 4000;
+            while (millis() < bootEnd) {
                 serial_littlefs_poll();
-                delay(1);
+                if (serial_littlefs_is_active()) {
+                    display_show_maintenance_screen();
+                    while (serial_littlefs_is_active()) {
+                        serial_littlefs_poll();
+                        delay(1);
+                    }
+                    break; // END parancs vagy idle timeout utan folytatja a normal bootot
+                }
+                delay(5);
             }
-            break;  // END parancs vagy idle timeout után folytatja a normál bootot
         }
-        delay(5);
     }
-}
-#endif
 
 #if (BRIGHTNESS_PIN != 255) // backlight plugin
     Serial.printf("Exists? %p\n", &backlightPlugin);
@@ -184,6 +193,7 @@ serial_littlefs_begin(Serial);   //Botfai Tibor: sor hozzáadva a serial_littlef
     pm.init();     // pluginsManager
     pm.on_setup(); // pluginsManager
     config.init();
+    serialLittlefsEnabled = config.store.serialLittlefsEnabled;
     display.init();
     revealDisplayBacklight(false);
 

@@ -42,7 +42,7 @@
 #    define ESP_ARDUINO_3 1
 #endif
 
-#define CONFIG_VERSION 4
+#define CONFIG_VERSION 6
 
 enum playMode_e : uint8_t { // DLNA mod
     PM_WEB = 0,
@@ -210,7 +210,8 @@ struct config_t {
     uint8_t clockFontStyle;
     bool    clockFontMono;
     bool    clockAmPmStyle;
-        bool    rssiAsText;
+    bool    rssiAsText;
+    bool    serialLittlefsEnabled;
 };
 #if IR_PIN != 255
 struct IRCommand {

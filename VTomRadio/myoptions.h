@@ -57,12 +57,12 @@ Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not 
 //#define TS_CS    3
 
 /*----- Touch I2C -----*/
- #define TS_MODEL TS_MODEL_FT6X36
+ //#define TS_MODEL TS_MODEL_FT6X36
 // #define TS_MODEL TS_MODEL_AXS15231B
- #define TS_SCL     7
- #define TS_SDA     8
- #define TS_INT    17 
- #define TS_RST     1
+ //#define TS_SCL     7
+ //#define TS_SDA     8
+ //#define TS_INT    17 
+ //#define TS_RST     1
 
 /*----- NEXTION DISPLAY serial port -----*/
 // #define NEXTION_RX			15
@@ -76,21 +76,21 @@ Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not 
 //Szabad és MCLK-ra alkalmas jelöltek: GPIO 0, 7, 8, 15, 16, 17, 18, 45, 46
 
 /*----- ENCODER 1 ------*/
-#define ENC_BTNR 47 // S2 41
-#define ENC_BTNL 42 // S1 40 
-#define ENC_BTNB 21 // KEY 39
- #define ENC_INTERNALPULLUP	true
+#define ENC_BTNR 47 // S2
+#define ENC_BTNL 42 // S1
+#define ENC_BTNB 21 // KEY
+#define ENC_INTERNALPULLUP	true
 
 /*----- ENCODER 2 -----*/
-#define ENC2_BTNR 41 // S2 47
-#define ENC2_BTNL 40 // S1 48-RGB LED!
-#define ENC2_BTNB 39 // KEY 21
+#define ENC2_BTNR 41 // S2
+#define ENC2_BTNL 40 // S1
+#define ENC2_BTNB 39 // KEY
 #define ENC2_INTERNALPULLUP	true
 
 /*----- CLOCK MODUL RTC DS3132 -----*/
-// #define RTC_SCL			     7
-// #define RTC_SDA			     8
-// #define RTC_MODULE DS3231
+ #define RTC_SCL			     7
+ #define RTC_SDA			     8
+#define RTC_MODULE DS3231
 
 /*----- REMOTE CONTROL INFRARED RECEIVER -----*/
 /*----- Alvásból ébresztéshez a GPIO 2 -őt kell használni, mert a GPIO 38 nem RTC pin. A PCB-n át kell kötni! -----*/
@@ -131,7 +131,7 @@ When music is not playing (stopped or volume is 0), the pin is set to LOW. This 
 /*----- Instead of WAKE_PIN, you can now set two pins for wake-up: WAKE_PIN1 and WAKE_PIN2 -----*/
 /*----- This way, you can wake up the device with a remote control and another button. -----*/
  //#define BTN_MODE ENC_BTNB
-  #define WAKE_PIN1 IR_PIN
+ // #define WAKE_PIN1 IR_PIN
 // #define WAKE_PIN2 ENC2_BTNB
 
 /*----- by Zsolt Simon -----*/
@@ -142,4 +142,4 @@ When music is not playing (stopped or volume is 0), the pin is set to LOW. This 
 
 //#define POWER_LED 38      // Button LED pin (will be turned on when player is on)
 
-//#define USE_SERIAL_LITTLEFS  // Enable Serial LittleFS for maintenance mode (requires SerialLittleFS library)
+// Serial LittleFS maintenance mode is now controlled in Web UI: Tools > Serial LittleFS maintenance mode

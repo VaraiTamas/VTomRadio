@@ -805,12 +805,15 @@ void NetServer::processQueue() {
       case GETACTIVE:
       {
         bool dbgact = false, nxtn = false;
+        const bool systemUiAvailable = (network.status == CONNECTED || network.status == SOFT_AP);
         //String act = F("\"group_wifi\",");
         nsBuf[0] = '\0';
         APPEND_GROUP("group_wifi");
-        if (network.status == CONNECTED) {
+        if (systemUiAvailable) {
           //act += F("\"group_system\",");
           APPEND_GROUP("group_system");
+        }
+        if (network.status == CONNECTED) {
           if (BRIGHTNESS_PIN != 255 || DSP_CAN_FLIPPED || dbgact) {
             APPEND_GROUP("group_display");
           }
@@ -904,10 +907,10 @@ void NetServer::processQueue() {
         int wsPos = snprintf(
           wsBuf,
           sizeof(wsBuf),
-          "{\"sst\":%d,\"aif\":%d,\"rssiastext\":%d,\"vu\":%d,\"vupeak\":%d,\"vubox\":%d,\"softr\":%d,\"vut\":%d,\"mdns\":\"%s\",\"ipaddr\":\"%s\", \"watchdog\": %d, \"stallwatchdog\": %d, "
+          "{\"sst\":%d,\"aif\":%d,\"rssiastext\":%d,\"vu\":%d,\"vupeak\":%d,\"vubox\":%d,\"softr\":%d,\"vut\":%d,\"mdns\":\"%s\",\"ipaddr\":\"%s\", \"watchdog\": %d, \"stallwatchdog\": %d, \"seriallittlefs\": %d, "
           "\"nameday\": %d, \"clocktts\": %d, \"clockttslang\": \"%.2s\", \"clockttsinterval\": %u, ",
           config.store.smartstart != 2, config.store.audioinfo, config.store.rssiAsText, config.store.vumeter, config.store.vuPeak, config.store.vuBidirectional, config.store.softapdelay, config.vuRefLevel, config.store.mdnsname,
-          config.ipToStr(WiFi.localIP()), config.store.watchdog, config.store.stallWatchdog, config.store.nameday,
+          config.ipToStr(WiFi.localIP()), config.store.watchdog, config.store.stallWatchdog, config.store.serialLittlefsEnabled, config.store.nameday,
           config.store.clockTtsEnabled, config.store.clockTtsLanguage, static_cast<unsigned int>(config.store.clockTtsIntervalMinutes)
         );
         if (wsPos > 0 && static_cast<size_t>(wsPos) < sizeof(wsBuf)) {
