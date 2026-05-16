@@ -67,7 +67,7 @@ const BitrateBoxConfig bitrateConf PROGMEM = {10, 145, 20, WA_CENTER, 1, 4, true
 
 /* left, top, textsize, width, onebandwidth (width), onebandheight (height), bandsHspace (space), bandsVspace (vspace), numofbands (perheight), fadespeed, labelwidth, labelheight} */
 #define VU_HAS_DUAL_CONF 1
-const VU_WidgetConfig vuConf PROGMEM = {37, 258, 9, 200, 7, 6, 2, 20, 9, 22, 12};              // ALAP VU: két VU egymás alatt
+const VU_WidgetConfig vuConf PROGMEM = {37, 258, 9, 300, 7, 6, 2, 30, 11, 22, 12};              // ALAP VU: két VU egymás alatt
 const VU_WidgetConfig vuConfBidirectional PROGMEM = {35, 265, 9, 200, 7, 6, 2, 20, 9, 22, 12}; // BOOMBOX_STYLE: két VU egymás mellett
 
 /* STRINGS  */

@@ -151,7 +151,7 @@ static bool serviceMaintenanceMode() {
 }
 
 void setup() {
-    Serial.begin(115200); 
+    Serial.begin(460800); 
     delay(100);
     EEPROM.begin(EEPROM_SIZE);
     serial_littlefs_begin(Serial);

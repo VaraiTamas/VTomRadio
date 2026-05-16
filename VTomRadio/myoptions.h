@@ -52,16 +52,16 @@ Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not 
    GPIO 13 - MISO  // Ne csatlakoztasd a kijelzőhöz!!! - Do not connect to the LCD display!!!
 */
 
-/*----- Touch ISP -----*/
+/*----- Touch SPI -----*/
 //#define TS_MODEL TS_MODEL_XPT2046
 //#define TS_CS    3
 
 /*----- Touch I2C -----*/
- //#define TS_MODEL TS_MODEL_FT6X36
+#define TS_MODEL TS_MODEL_FT6X36
 // #define TS_MODEL TS_MODEL_AXS15231B
- //#define TS_SCL     7
- //#define TS_SDA     8
- //#define TS_INT    17 
+ #define TS_SCL     7
+ #define TS_SDA     8
+ #define TS_INT    17 
  //#define TS_RST     1
 
 /*----- NEXTION DISPLAY serial port -----*/
@@ -105,7 +105,7 @@ Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not 
 /*----- This way, you can wake up the device with a remote control and another button. -----*/
 //#define BTN_MODE ENC_BTNB
 #define WAKE_PIN1 IR_PIN
-// #define WAKE_PIN2 ENC2_BTNB
+#define WAKE_PIN2 ENC2_BTNB
 
 /*----- SD CARD -----*/
 // #define SDC_CS     18
@@ -136,9 +136,9 @@ When music is not playing (stopped or volume is 0), the pin is set to LOW. This 
 
 /*----- by Zsolt Simon -----*/
 /*----- Tested on Synology NAS ----- */
-// #define USE_DLNA
-// #define dlnaHost "192.168.1.200"
-// #define dlnaIDX  21
+ #define USE_DLNA
+ #define dlnaHost "192.168.1.200"
+ #define dlnaIDX  21
 
 //#define POWER_LED 38      // Button LED pin (will be turned on when player is on)
 
