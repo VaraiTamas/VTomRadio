@@ -158,7 +158,8 @@ bool ClockWidget::_getTime() {
         strftime(_timebuffer, sizeof(_timebuffer), "%H:%M", &_drawTimeinfo);
     }
     const bool hasValidTime = _drawTimeinfo.tm_year > 100;
-    bool       ret = (hasValidTime && _drawTimeinfo.tm_sec == 0) || _forceflag != _drawTimeinfo.tm_year;
+    const bool timeChanged = (_lastRenderedHour != _drawTimeinfo.tm_hour) || (_lastRenderedMinute != _drawTimeinfo.tm_min);
+    bool       ret = (hasValidTime && (_drawTimeinfo.tm_sec == 0 || timeChanged)) || _forceflag != _drawTimeinfo.tm_year;
     _forceflag = _drawTimeinfo.tm_year;
     return ret;
 }
@@ -431,9 +432,8 @@ void ClockWidget::_printClock(bool redraw) {
     uint16_t secClearH = secH;
 
     if (config.store.clockAmPmStyle) {
-        const uint16_t splitY = getAmPmSplitY();
         secClearY = 0;
-        secClearH = splitY;
+        secClearH = secH + 2;
     }
 
     if (secClearX < 0) secClearX = 0;
@@ -445,7 +445,6 @@ void ClockWidget::_printClock(bool redraw) {
     if (config.store.clockFontStyle == CLOCKFONT_STYLE_DIGI7 && config.store.clockFontMono) {
         uint16_t ghostColor = config.theme.clockbg;
         if (ghostColor == config.theme.background) {
-            // Use a dimmed seconds color when clock shadow equals background.
             ghostColor = (config.theme.seconds & 0xF7DE) >> 1;
             if (ghostColor == config.theme.background) {
                 ghostColor = config.theme.seconds;
@@ -479,6 +478,8 @@ void ClockWidget::_printClock(bool redraw) {
     // 6) Fő sprite kirajzolása
     // ------------------------------------------------------------
     _spr->pushSprite(_clockleft, _config.top);
+    _lastRenderedHour = _drawTimeinfo.tm_hour;
+    _lastRenderedMinute = _drawTimeinfo.tm_min;
     _lastRenderedSecond = currentSecond;
     _lastRenderedDots = showDots;
 #if CLOCK_WIDGET_SEC_DEBUG
@@ -507,8 +508,8 @@ void ClockWidget::_formatDate() {
         case 0:  sprintf(_tmp, "%d. %s %2d. %s",   _drawTimeinfo.tm_year + 1900, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_mday, LANG::dowf[_drawTimeinfo.tm_wday]); break; // HU: YYYY. MMM DD. DOW
         case 1:  sprintf(_tmp, "%2d %s %d",         _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break;                                       // EN/RU: DD MMM YYYY
         case 2:  sprintf(_tmp, "%s %2d %s %d",      LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // NL: DOW DD MMM YYYY
-        case 3:  sprintf(_tmp, "%s - %02d %s %04d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // PL: DOW - DD MMM YYYY
-        default: sprintf(_tmp, "%s, %02d. %s %d",   LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // DE/SK/UA/ES/GR: DOW, DD. MMM YYYY
+        case 3:  sprintf(_tmp, "%s - %02d. %s. %04d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // PL: DOW - DD MMM YYYY
+        default: sprintf(_tmp, "%s - %02d. %s. %d",   LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // DE/SK/UA/ES/GR: DOW, DD. MMM YYYY
     }
 #endif
 }

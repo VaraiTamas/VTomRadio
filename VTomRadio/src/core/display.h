@@ -38,6 +38,7 @@ class Display {
     void          _start();
     bool          ready() { return _bootStep == 2; }
     void          resetQueue();
+    void          purgeQueuedRequestType(displayRequestType_e type);
     void          putRequest(displayRequestType_e type, int payload = 0);
     void          flip();
     void          invert();

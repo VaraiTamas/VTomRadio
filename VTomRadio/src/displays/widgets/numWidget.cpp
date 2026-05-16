@@ -29,8 +29,10 @@ void NumWidget::init(WidgetConfig wconf, uint16_t buffsize, bool uppercase, uint
         _spr->setTextSize(1);
     }
     uint16_t fontHeight = _spr->fontHeight();
+    uint16_t spriteWidth = font_textWidth("8888") + 20;
+    if (spriteWidth < 150) { spriteWidth = 150; }
 
-    _spr->createSprite(150, fontHeight);
+    _spr->createSprite(spriteWidth, fontHeight);
 }
 
 void NumWidget::setText(const char* txt) {

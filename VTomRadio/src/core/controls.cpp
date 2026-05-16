@@ -10,6 +10,7 @@
 #include "netserver.h"
 #include "driver/rtc_io.h"
 #include "../pluginsManager/pluginsManager.h"
+#include "../plugins/backlight/backlight.h"
 
 long encOldPosition = 0;
 long enc2OldPosition = 0;
@@ -17,6 +18,20 @@ int  lpId = -1;
 
 uint32_t wakeCheckUntil = 0;
 bool     waitingForWakeIr = false;
+
+static inline void registerUserActivity() {
+    config.screensaverTicks = 0;
+    config.screensaverPlayingTicks = 0;
+#if BRIGHTNESS_PIN != 255
+    if (config.store.fadeEnabled) {
+        if (backlightPlugin.isDimmed() || backlightPlugin.isFading()) {
+            backlightPlugin.wake();
+        } else {
+            backlightPlugin.activity();
+        }
+    }
+#endif
+}
 
 static inline bool hasPrimaryEncoder() {
     return ENC_BTNL != 255 && ENC_BTNR != 255;
@@ -282,11 +297,12 @@ void irBlink() {
 void irNumber(uint8_t num) {
     uint16_t s;
     if (display.numOfNextStation == 0 && num == 0) return;
-    display.putRequest(NEWMODE, NUMBERS);
+    if (display.mode() != NUMBERS) { display.putRequest(NEWMODE, NUMBERS); }
     if (display.numOfNextStation > UINT16_MAX / 10) return;
     s = display.numOfNextStation * 10 + num;
     if (s > config.playlistLength()) return;
     display.numOfNextStation = s;
+    display.purgeQueuedRequestType(NEXTSTATION);
     display.putRequest(NEXTSTATION, s);
 }
 
@@ -298,7 +314,8 @@ void irBackspace() {
     }
     s = s / 10;
     display.numOfNextStation = s;
-    display.putRequest(NEWMODE, NUMBERS);
+    if (display.mode() != NUMBERS) { display.putRequest(NEWMODE, NUMBERS); }
+    display.purgeQueuedRequestType(NEXTSTATION);
     if (s > 0) {
         display.putRequest(NEXTSTATION, s);
     } else {
@@ -398,6 +415,7 @@ void irLoop() {
                 if (config.ircodes.irVals[target][j] == irResults.value) {
                     if (network.status != CONNECTED && network.status != SDREADY && target != IR_MODE) return;
                     if (target != IR_MODE && display.mode() == LOST) return;
+                    registerUserActivity();
                     if (display.mode() == SCREENSAVER || display.mode() == SCREENBLANK) {
                         display.putRequest(NEWMODE, PLAYER);
                         return;
@@ -411,9 +429,14 @@ void irLoop() {
                         case IR_PLAY_STOP: {
                             irBlink();
                             if (display.mode() == NUMBERS) {
-                                display.putRequest(NEWMODE, PLAYER);
-                                player.sendCommand({PR_PLAY, display.numOfNextStation});
+                                const uint16_t targetStation = display.numOfNextStation;
+                                display.purgeQueuedRequestType(NEXTSTATION);
                                 display.numOfNextStation = 0;
+                                if (targetStation > 0) {
+                                    player.sendCommand({PR_PLAY, targetStation});
+                                } else {
+                                    display.putRequest(NEWMODE, PLAYER);
+                                }
                                 break;
                             }
                             onBtnClick(1);
@@ -634,6 +657,7 @@ void onBtnClick(int id) {
     controlEvt_e btnid = static_cast<controlEvt_e>(id);
     pm.on_btn_click(btnid);
     if (network.status != CONNECTED && network.status != SDREADY && (controlEvt_e)id != EVT_BTNMODE && !passBnCenter) return;
+    registerUserActivity();
     switch (btnid) {
         case EVT_BTNLEFT: {
             controlsEvent(false);

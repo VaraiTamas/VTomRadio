@@ -46,9 +46,27 @@ Nextion nextion;
 
 QueueHandle_t displayQueue;
 
+static void purgeQueuedRequestType(displayRequestType_e type) {
+    if (displayQueue == NULL) { return; }
+    requestParams_t keep[8];
+    size_t          keepCount = 0;
+    requestParams_t item;
+    while (xQueueReceive(displayQueue, &item, 0) == pdTRUE) {
+        if (item.type != type && keepCount < (sizeof(keep) / sizeof(keep[0]))) {
+            keep[keepCount++] = item;
+        }
+    }
+    for (size_t i = 0; i < keepCount; i++) {
+        xQueueSend(displayQueue, &keep[i], 0);
+    }
+}
+
+void Display::purgeQueuedRequestType(displayRequestType_e type) {
+    ::purgeQueuedRequestType(type);
+}
+
 static void loopDspTask(void* pvParameters) {
     while (true) {
-        // Serial.printf("STACK FREE: %u\n", uxTaskGetStackHighWaterMark(NULL));
 #ifndef DUMMYDISPLAY
         if (displayQueue == NULL) { break; }
         if (timekeeper.loop0()) {
@@ -294,7 +312,6 @@ void Display::_start() {
         return;
     }
 #    ifdef USE_NEXTION
-    // nextion.putcmd("page player");
     nextion.start();
 #    endif
     _buildPager();
@@ -380,20 +397,27 @@ void Display::_applyRssiMode() {
 void Display::_swichMode(displayMode_e newmode) {
     Serial.printf("Display::_swichMode: %d\n", newmode);
 #    ifdef USE_NEXTION
-    // nextion.swichMode(newmode);
     nextion.putRequest({NEWMODE, newmode});
 #    endif
     if (newmode == _mode || (network.status != CONNECTED && network.status != SDREADY)) { return; }
+    const displayMode_e prevMode = _mode;
     _mode = newmode;
     dsp.setScrollId(NULL);
     if (newmode == PLAYER) {
-        _clock->moveBack(); // Ha az óra nem az eredeti helyén van (pl. képernyővédő után), visszaállítjuk.
+        if (prevMode == NUMBERS) {
+            purgeQueuedRequestType(NEXTSTATION);
+        }
+        _clock->moveBack();
         _refreshThemeColors();
         numOfNextStation = 0;
         _meta->setAlign(metaConf.widget.align);
         _station();
         config.isScreensaver = false;
         _pager->setPage(pages[PG_PLAYER]);
+        if (_nums) { _nums->setText(""); }
+        if (_vuwidget) {
+            _vuwidget->lock(!config.store.vumeter);
+        }
         config.setDspOn(config.store.dspon, false);
         pm.on_display_player();
     }
@@ -422,6 +446,7 @@ void Display::_swichMode(displayMode_e newmode) {
 #    endif
         _nums->setText(config.store.volume, numtxtFmt);
     }
+    if (newmode == NUMBERS) { _showDialog(""); }
     if (newmode == LOST) { _showDialog(LANG::const_DlgLost); }
     if (newmode == UPDATING) { _showDialog(LANG::const_DlgUpdate); }
     if (newmode == SLEEPING) {
@@ -432,7 +457,6 @@ void Display::_swichMode(displayMode_e newmode) {
     }
     if (newmode == SDCHANGE) { _showDialog(LANG::const_waitForSD); }
     if (newmode == INFO || newmode == SETTINGS || newmode == TIMEZONE || newmode == WIFI) { _showDialog(LANG::const_DlgNextion); }
-    if (newmode == NUMBERS) { _showDialog(""); }
 #    if (DSP_MODEL == DSP_ILI9488) || (DSP_MODEL == DSP_ST7796)
     if (newmode == PRESETS) {
         _pager->setPage(pages[PG_PRESETS], true);
@@ -544,7 +568,9 @@ void Display::loop() {
 
                 case NEWTITLE: _title(); break;
                 case NEWSTATION: _station(); break;
-                case NEXTSTATION: _drawNextStationNum(request.payload); break;
+                case NEXTSTATION:
+                    if (_mode == NUMBERS) { _drawNextStationNum(request.payload); }
+                    break;
                 case DRAWPLAYLIST: _drawPlaylist(); break;
                 case DRAWVOL: _volume(); break;
 
@@ -817,7 +843,6 @@ void Display::init() {
 }
 void Display::_start() {
 #    ifdef USE_NEXTION
-    // nextion.putcmd("page player");
     nextion.start();
 #    endif
     config.setTitle(LANG::const_PlReady);

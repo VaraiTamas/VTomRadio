@@ -24,8 +24,10 @@ static uint8_t* font_vlw_clock_calibri = nullptr;
 static uint8_t* font_vlw_clock_sec_calibri = nullptr;
 
 // ================= GFX FONTOK =================
-extern const GFXfont Clock_GFXfont;
-extern const GFXfont Clock_GFXfont_sec;
+using namespace lgfx::v1::fonts;
+
+const GFXfont Clock_GFXfont     = FreeMonoBold24pt7b;
+const GFXfont Clock_GFXfont_sec = FreeMonoBold18pt7b;
 
 #ifndef DSP_OLED
 const GFXfont* font_clock = &Clock_GFXfont;

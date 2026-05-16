@@ -43,6 +43,8 @@ class ClockWidget : public Widget {
     const void*  _lastSecFont = nullptr;
     uint8_t      _lastClockFontStyle = 0xFF;
     bool         _lastClockAmPmStyle = false;
+    int16_t      _lastRenderedHour = -1;
+    int16_t      _lastRenderedMinute = -1;
     int16_t      _lastRenderedSecond = -1;
     bool         _lastRenderedDots = false;
     tm           _drawTimeinfo{};
