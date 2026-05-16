@@ -111,6 +111,8 @@ A névnapok megjelenítése a WEB-es felületen kikapcsolható options/ SYSTEM->
    - 3D nyomtatási terv --> https://www.printables.com/model/1621877-yoradio-case-for-ips-ctp-35-inch-spi-red-ili9488-f
 
 ## Version history: 
+### v0.0.7
+- LittleFS-SPIFFS_Partition_Manager_v0.3.4 program hozzáadva. (by Botfai Tibor)
 ### v0.0.6
 - Bitrate text betöltési idejének javítása a kijelzőn és a WEB UI-n. (by Andrzej Jaroszuk)
 ### v0.0.5
