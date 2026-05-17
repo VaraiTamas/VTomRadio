@@ -11,7 +11,7 @@ digit,255,255,255
 nameday_label,213,210,213
 nameday,238,234,238
 clock,255,255,255
-clockbg,0,0,0
+clockbg,8,12,8
 seconds,197,194,197
 div,172,0,0
 date,213,210,213
