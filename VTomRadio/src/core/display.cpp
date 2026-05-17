@@ -146,7 +146,7 @@ void Display::init() {
     }
 
     // --- QUEUE ---
-    displayQueue = xQueueCreate(5, sizeof(requestParams_t));
+    displayQueue = xQueueCreate(20, sizeof(requestParams_t)); // Increased from 5 to 20 for better handling of rapid channel switches
     while (displayQueue == NULL) { delay(1); }
     _pager = new Pager();
     _footer = new Page();
@@ -406,6 +406,7 @@ void Display::_swichMode(displayMode_e newmode) {
     if (newmode == PLAYER) {
         if (prevMode == NUMBERS) {
             purgeQueuedRequestType(NEXTSTATION);
+            purgeQueuedRequestType(NEWTITLE); // Clear stale title updates to avoid delayed metadata display
         }
         _clock->moveBack();
         _refreshThemeColors();
@@ -447,7 +448,6 @@ void Display::_swichMode(displayMode_e newmode) {
         _nums->setText(config.store.volume, numtxtFmt);
     }
     if (newmode == NUMBERS) { _showDialog(""); }
-    if (newmode == LOST) { _showDialog(LANG::const_DlgLost); }
     if (newmode == UPDATING) { _showDialog(LANG::const_DlgUpdate); }
     if (newmode == SLEEPING) {
         _showDialog("SLEEPING");
@@ -457,6 +457,7 @@ void Display::_swichMode(displayMode_e newmode) {
     }
     if (newmode == SDCHANGE) { _showDialog(LANG::const_waitForSD); }
     if (newmode == INFO || newmode == SETTINGS || newmode == TIMEZONE || newmode == WIFI) { _showDialog(LANG::const_DlgNextion); }
+    if (newmode == NUMBERS) { _showDialog(""); }
 #    if (DSP_MODEL == DSP_ILI9488) || (DSP_MODEL == DSP_ST7796)
     if (newmode == PRESETS) {
         _pager->setPage(pages[PG_PRESETS], true);
@@ -632,6 +633,10 @@ void Display::loop() {
 #    ifndef HIDE_RSSI
                     _applyRssiMode();
 #    endif
+                    break;
+
+                case INVALIDATETHEMEWIDGETS:
+                    invalidateThemeWidgets();
                     break;
 
                 case BOOTSTRING:

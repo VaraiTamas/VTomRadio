@@ -499,7 +499,12 @@ void audio_id3artist(const char *info) {
  *   display.putRequest(NEWTITLE);
  * Display::_title() szétválasztja a kötőjel mentén a _title1 / _title2 sorokat
  * és frissíti a scrollwidgeteket.
+ * 
+ * Throttled: avoid excessive NEWTITLE requests in queue.
  */
+static char g_lastTitleSent[BUFLEN] = "";
+static uint32_t g_lastTitleTime = 0;
+
 void audio_setTitleSafe(const char *info) {
   if (player.lockOutput) {
     return;
@@ -507,6 +512,14 @@ void audio_setTitleSafe(const char *info) {
   if (!info) {
     return;
   }
+  // Throttle: skip if same title sent within last 200ms
+  uint32_t now = millis();
+  if (strcmp(g_lastTitleSent, info) == 0 && (now - g_lastTitleTime) < 200) {
+    return; // Duplicate or too-frequent update, skip
+  }
+  // New or different title after throttle period
+  strlcpy(g_lastTitleSent, info, sizeof(g_lastTitleSent));
+  g_lastTitleTime = now;
   config.setTitle(info);
 }
 
@@ -586,6 +599,58 @@ void removeBOM(char *s) {
   }
 }
 
+static void stripTransportSuffix(char *s) {
+  if (!s) {
+    return;
+  }
+
+  char *marker = strstr(s, "||");
+  if (!marker) {
+    return;
+  }
+
+  char *tail = marker + 2;
+  while (*tail == ' ' || *tail == '\t') {
+    tail++;
+  }
+
+  if (*tail == '\0') {
+    while (marker > s && (marker[-1] == ' ' || marker[-1] == '\t')) {
+      marker--;
+    }
+    *marker = '\0';
+    return;
+  }
+
+  int  pipeCount = 0;
+  bool validTailChars = true;
+  bool hasAlphaNum = false;
+  for (const char *p = tail; *p; ++p) {
+    const unsigned char c = static_cast<unsigned char>(*p);
+    if (c == '|') {
+      pipeCount++;
+      continue;
+    }
+    if (isalnum(c)) {
+      hasAlphaNum = true;
+      continue;
+    }
+    if (c == '_' || c == '-' || c == ' ' || c == '\t') {
+      continue;
+    }
+    validTailChars = false;
+    break;
+  }
+
+  // Typical suffix from some streams: "|| 1|PLEV02B|F6|45"
+  if (validTailChars && hasAlphaNum && pipeCount >= 2) {
+    while (marker > s && (marker[-1] == ' ' || marker[-1] == '\t')) {
+      marker--;
+    }
+    *marker = '\0';
+  }
+}
+
 bool cleanMeta(const char *src, char *dst, size_t dstSize) {
   if (!src || !dst || dstSize == 0) {
     return false;
@@ -598,6 +663,8 @@ bool cleanMeta(const char *src, char *dst, size_t dstSize) {
   _utf8_clean(dst);
   // különböző aposztrofok és idézőjelek simára cserélése
   normalizeText(dst);
+  // Egyes stream-ek technikai kódokat fűznek a title végére ("|| ...").
+  stripTransportSuffix(dst);
   // csak ellenőrzés (nem módosít):
   if (!printable(dst)) {
     return false;

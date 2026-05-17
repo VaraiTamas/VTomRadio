@@ -569,7 +569,7 @@ bool NetServer::begin(bool quiet) {
         return;
       }
 
-      display.invalidateThemeWidgets();
+      display.putRequest(INVALIDATETHEMEWIDGETS, 0);
       display.putRequest(NEWMODE, CLEAR);
       display.putRequest(NEWMODE, PLAYER);
 
@@ -630,7 +630,7 @@ bool NetServer::begin(bool quiet) {
       displayMode_e currentMode = display.mode();
       if (currentMode == CLEAR) { currentMode = PLAYER; }
 
-      display.invalidateThemeWidgets();
+      display.putRequest(INVALIDATETHEMEWIDGETS, 0);
 
       display.putRequest(NEWMODE, CLEAR);
       display.putRequest(NEWMODE, currentMode);
