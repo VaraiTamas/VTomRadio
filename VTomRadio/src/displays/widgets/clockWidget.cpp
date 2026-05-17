@@ -443,14 +443,7 @@ void ClockWidget::_printClock(bool redraw) {
     _spr->fillRect((uint16_t)secClearX, secClearY, secClearW, secClearH, config.theme.background);
 
     if (config.store.clockFontStyle == CLOCKFONT_STYLE_DIGI7 && config.store.clockFontMono) {
-        uint16_t ghostColor = config.theme.clockbg;
-        if (ghostColor == config.theme.background) {
-            ghostColor = (config.theme.seconds & 0xF7DE) >> 1;
-            if (ghostColor == config.theme.background) {
-                ghostColor = config.theme.seconds;
-            }
-        }
-        _spr->setTextColor(ghostColor, config.theme.background);
+        _spr->setTextColor(config.theme.clockbg, config.theme.background);
         _spr->setCursor(leftSec, secTop);
         _spr->print("88");
         _spr->setTextColor(config.theme.seconds);
