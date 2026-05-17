@@ -111,6 +111,10 @@ A névnapok megjelenítése a WEB-es felületen kikapcsolható options/ SYSTEM->
    - 3D nyomtatási terv --> https://www.printables.com/model/1621877-yoradio-case-for-ips-ctp-35-inch-spi-red-ili9488-f
 
 ## Version history: 
+### v0.0.9
+- Kijelző stabilítási javítások, optimalizálás.
+- Theme editor használata során ESP32 összeomlásának javítása.
+- A data/images könyvtárból kikerültek a wifi ikonok, így a program maga rajzolja ki a megfelelő ikonokat a wifi jel erősségének megfelelően. Ha valaki ragaszkodik a régi ikonokhoz, akkor a data/images könyvtárba visszahelyezheti őket, de azokon a téma editor nem változtatja a színeket. Az ikonok megtalálhatóak az /images mappában.
 ### v0.0.8 (by Andrzej Jaroszuk)
 - DIM állapotváltások javítása
 - Képernyőmaradványok javítása a kijelzőn
