@@ -11,7 +11,7 @@ import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import filedialog, simpledialog, ttk
 
 try:
     import serial
@@ -37,6 +37,7 @@ WRITE_DATA_TIMEOUT_SAFE = 2.0
 WRITE_END_TIMEOUT = 6.0
 MAX_AUTO_RETRIES = 1
 DEFAULT_SPIFFS_CAPACITY_KB = 896
+MAX_PROTO_LINE_BYTES = 2 * 1024 * 1024
 
 
 TEXT = {
@@ -512,9 +513,10 @@ class SerialSpiFFSClient:
                 continue
             if ch != 10:
                 buf.append(ch)
-                if len(buf) > 4096:
-                    last_noise = buf[:120].decode("utf-8", errors="ignore")
+                if len(buf) > MAX_PROTO_LINE_BYTES:
+                    preview = buf[:120].decode("utf-8", errors="ignore")
                     buf.clear()
+                    raise ProtoError(f"protocol line too long (starts with: {preview})")
                 continue
 
             if not buf:
@@ -799,10 +801,96 @@ class App(tk.Tk):
         if self._dark_mode:
             self.after(50, lambda: apply_dark_title_bar(self))
         if serial is None:
-            messagebox.showwarning(self.tr("error"), self.tr("pyserial_missing"))
+            self.show_warning(self.tr("error"), self.tr("pyserial_missing"))
 
     def tr(self, key: str) -> str:
         return TEXT[self.lang][key]
+
+    def _prepare_dialog_parent(self):
+        try:
+            self.lift()
+            self.focus_force()
+        except Exception:
+            pass
+        return self
+
+    def show_info(self, title: str, message: str):
+        return self._show_modal_dialog(title, message, "info", ("ok",))
+
+    def show_warning(self, title: str, message: str):
+        return self._show_modal_dialog(title, message, "warning", ("ok",))
+
+    def show_error(self, title: str, message: str):
+        return self._show_modal_dialog(title, message, "error", ("ok",))
+
+    def ask_yes_no(self, title: str, message: str) -> bool:
+        return bool(self._show_modal_dialog(title, message, "question", ("yes", "no")))
+
+    def _dialog_button_text(self, button: str) -> str:
+        if button == "yes":
+            return "Igen" if self.lang == "HU" else "Yes"
+        if button == "no":
+            return "Nem" if self.lang == "HU" else "No"
+        return "OK"
+
+    def _show_modal_dialog(self, title: str, message: str, kind: str, buttons: tuple[str, ...]):
+        self._prepare_dialog_parent()
+        dialog = tk.Toplevel(self)
+        dialog.title(title)
+        dialog.transient(self)
+        dialog.resizable(False, False)
+        bg = "#1e1e1e" if self._dark_mode else "#f0f0f0"
+        dialog.configure(bg=bg)
+        try:
+            icon_path = get_app_icon_path()
+            if icon_path:
+                dialog.iconbitmap(icon_path)
+        except Exception:
+            pass
+
+        result = {"value": buttons[0] == "ok"}
+        frame = ttk.Frame(dialog, padding=18)
+        frame.pack(fill="both", expand=True)
+        body = ttk.Frame(frame)
+        body.pack(fill="both", expand=True)
+        icon_text = {"info": "i", "warning": "!", "error": "X", "question": "?"}.get(kind, "i")
+        icon = ttk.Label(body, text=icon_text, width=3, anchor="center", font=("Segoe UI", 24, "bold"))
+        icon.pack(side="left", padx=(0, 14), anchor="n")
+        text = ttk.Label(body, text=message, justify="left", wraplength=420)
+        text.pack(side="left", fill="both", expand=True)
+
+        button_row = ttk.Frame(frame)
+        button_row.pack(fill="x", pady=(18, 0))
+
+        def close_with(value):
+            result["value"] = value
+            dialog.destroy()
+
+        for button in buttons:
+            value = button in {"ok", "yes"}
+            btn = ttk.Button(button_row, text=self._dialog_button_text(button), command=lambda v=value: close_with(v), width=12)
+            btn.pack(side="right", padx=(8, 0))
+            if button in {"ok", "yes"}:
+                btn.focus_set()
+
+        dialog.update_idletasks()
+        parent_x = self.winfo_rootx()
+        parent_y = self.winfo_rooty()
+        parent_w = max(1, self.winfo_width())
+        parent_h = max(1, self.winfo_height())
+        dialog_w = dialog.winfo_reqwidth()
+        dialog_h = dialog.winfo_reqheight()
+        x = parent_x + max(0, (parent_w - dialog_w) // 2)
+        y = parent_y + max(0, (parent_h - dialog_h) // 2)
+        if dialog_w < parent_w:
+            x = min(max(x, parent_x), parent_x + parent_w - dialog_w)
+        if dialog_h < parent_h:
+            y = min(max(y, parent_y), parent_y + parent_h - dialog_h)
+        dialog.geometry(f"+{x}+{y}")
+        dialog.protocol("WM_DELETE_WINDOW", lambda: close_with(False))
+        dialog.grab_set()
+        dialog.wait_window()
+        return result["value"]
 
     def _build_ui(self):
         top = ttk.Frame(self, padding=8)
@@ -838,8 +926,17 @@ class App(tk.Tk):
         self.btn_reboot = ttk.Button(actions, text=self.tr("reboot"), command=self.reboot_radio)
         self.btn_reboot.pack(side="left", padx=3)
 
+        self.connection_progress_row = ttk.Frame(self, padding=(8, 0, 8, 4))
+        self.connection_progress_spacer = ttk.Frame(self.connection_progress_row, width=250)
+        self.connection_progress_spacer.pack(side="left")
+        self.connection_progress_label = ttk.Label(self.connection_progress_row, text=self.tr("status_connecting"))
+        self.connection_progress_label.pack(side="left", padx=(0, 8))
+        self.connection_progress = ttk.Progressbar(self.connection_progress_row, mode="indeterminate", length=360)
+        self.connection_progress.pack(side="left")
+
         self.main_pane = ttk.Panedwindow(self, orient="horizontal")
         self.main_pane.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+        self.connection_progress_row.pack_forget()
 
         left = ttk.Frame(self.main_pane)
         right = ttk.Frame(self.main_pane)
@@ -1081,7 +1178,7 @@ class App(tk.Tk):
             self.tr("set_spiffs_capacity"),
             self.tr("spiffs_capacity_prompt"),
             initialvalue=initial,
-            parent=self,
+            parent=self._prepare_dialog_parent(),
         )
         if value is None:
             return
@@ -1107,6 +1204,7 @@ class App(tk.Tk):
         self.btn_mkdir.config(text=self.tr("mkdir"))
         self.btn_delete.config(text=self.tr("delete"))
         self.btn_reboot.config(text=self.tr("reboot"))
+        self.connection_progress_label.config(text=self.tr("status_connecting"))
         self.btn_queue_add_files.config(text=self.tr("queue_add_files"))
         self.btn_queue_add_folder.config(text=self.tr("queue_add_folder"))
         self.btn_queue_start.config(text=self.tr("queue_start"))
@@ -1139,6 +1237,21 @@ class App(tk.Tk):
         self.refresh_queue_tree()
         self.after_idle(self._on_window_layout_change)
 
+    def _start_connection_progress(self):
+        try:
+            self.connection_progress_label.config(text=self.tr("status_connecting"))
+            self.connection_progress_row.pack(fill="x", before=self.main_pane)
+            self.connection_progress.start(12)
+        except Exception:
+            pass
+
+    def _stop_connection_progress(self):
+        try:
+            self.connection_progress.stop()
+            self.connection_progress_row.pack_forget()
+        except Exception:
+            pass
+
     def set_status(self, text: str):
         self.after(0, lambda: self.status_var.set(text))
 
@@ -1149,6 +1262,7 @@ class App(tk.Tk):
             "could not enter maintenance mode": "Nem sikerült belépni a karbantartó módba",
             "unexpected BEGIN reply": "Váratlan BEGIN válasz",
             "protocol timeout": "Kommunikációs időtúllépés",
+            "protocol line too long": "Túl hosszú protokollsor",
             "not connected": "Nincs kapcsolat",
             "bad DELETE reply": "Hibás törlési válasz",
             "delete verification failed": "A törlés ellenőrzése sikertelen",
@@ -1173,7 +1287,7 @@ class App(tk.Tk):
 
     def run_job(self, fn, done=None):
         if self.worker and self.worker.is_alive():
-            messagebox.showwarning(self.tr("warning"), self.tr("queue_running"))
+            self.show_warning(self.tr("warning"), self.tr("queue_running"))
             return False
 
         def wrap():
@@ -1183,11 +1297,11 @@ class App(tk.Tk):
                     self.after(0, lambda: done(result))
             except Exception as e:
                 last_step = self.status_var.get()
-                self.after(0, lambda: messagebox.showerror(self.tr("error"), f"{self._localize_error(str(e))}\n\n{self.tr('last_step')}: {last_step}"))
+                self.after(0, lambda: self.show_error(self.tr("error"), f"{self._localize_error(str(e))}\n\n{self.tr('last_step')}: {last_step}"))
                 self.set_status(self.tr("error"))
                 self.after(0, self._reset_queue_runtime_labels)
             finally:
-                pass
+                self.after(0, self._stop_connection_progress)
 
         self.worker = threading.Thread(target=wrap, daemon=True)
         self.worker.start()
@@ -1229,7 +1343,9 @@ class App(tk.Tk):
             self.populate_tree()
             self.set_status(self.tr("maintenance_ok"))
 
-        self.run_job(job, done)
+        self._start_connection_progress()
+        if not self.run_job(job, done):
+            self._stop_connection_progress()
 
     def disconnect(self):
         if self.queue_running:
@@ -1283,6 +1399,23 @@ class App(tk.Tk):
             current += "/" + part
             self.known_remote_dir_paths.add(current)
 
+    def _forget_remote_path_tree(self, path: str):
+        path = normalize_remote_path(path)
+        if path == "/":
+            self.known_remote_file_paths.clear()
+            self.known_remote_dir_paths = {"/"}
+            return
+        prefix = path.rstrip("/") + "/"
+        self.known_remote_dir_paths = {
+            d for d in self.known_remote_dir_paths
+            if d == "/" or (d != path and not d.startswith(prefix))
+        }
+        self.known_remote_file_paths = {
+            key: remembered_path
+            for key, remembered_path in self.known_remote_file_paths.items()
+            if remembered_path != path and not remembered_path.startswith(prefix)
+        }
+
     def _guess_folder_for_basename_only_file(self, name: str) -> str | None:
         """
         Some maintenance firmwares report files inside folders as basename-only
@@ -1310,10 +1443,11 @@ class App(tk.Tk):
                 # uploaded into a folder, restore that folder path for display/actions.
                 # If this is a known myRadio asset type (for example VLW fonts),
                 # restore the conventional folder even after restarting the manager.
-                name = Path(path).name.lower()
-                remembered = self.known_remote_file_paths.get((name, size)) or self.known_remote_file_paths.get((name, -1))
-                guessed_folder = self._guess_folder_for_basename_only_file(name)
-                fixed_path = remembered or (normalize_remote_path(f"{guessed_folder}/{name}") if guessed_folder else path)
+                basename = Path(path).name
+                lookup_name = basename.lower()
+                remembered = self.known_remote_file_paths.get((lookup_name, size)) or self.known_remote_file_paths.get((lookup_name, -1))
+                guessed_folder = self._guess_folder_for_basename_only_file(basename)
+                fixed_path = remembered or (normalize_remote_path(f"{guessed_folder}/{basename}") if guessed_folder else path)
                 if fixed_path != path:
                     self._remember_remote_path(fixed_path, size, False)
             else:
@@ -1489,7 +1623,7 @@ class App(tk.Tk):
         self.after(0, self.refresh_queue_tree)
 
     def queue_add_files(self):
-        paths = filedialog.askopenfilenames()
+        paths = filedialog.askopenfilenames(parent=self._prepare_dialog_parent())
         if not paths:
             return
         target_root = self._selected_upload_target_root()
@@ -1500,13 +1634,13 @@ class App(tk.Tk):
         self.set_status(self.tr("queue_added"))
 
     def queue_add_folder(self):
-        folder = filedialog.askdirectory()
+        folder = filedialog.askdirectory(parent=self._prepare_dialog_parent())
         if not folder:
             return
         root = Path(folder)
         files = [p for p in root.rglob("*") if p.is_file()]
         if not files:
-            messagebox.showwarning(self.tr("warning"), self.tr("empty_folder"))
+            self.show_warning(self.tr("warning"), self.tr("empty_folder"))
             return
         selection = self.tree.selection()
         selected_remote = None
@@ -1572,7 +1706,7 @@ class App(tk.Tk):
 
     def remove_selected_tasks(self):
         if self.queue_running:
-            messagebox.showwarning(self.tr("warning"), self.tr("queue_running"))
+            self.show_warning(self.tr("warning"), self.tr("queue_running"))
             return
         selected = set(self.queue_tree.selection())
         if not selected:
@@ -1583,15 +1717,18 @@ class App(tk.Tk):
 
     def clear_completed_tasks(self):
         if self.queue_running:
-            messagebox.showwarning(self.tr("warning"), self.tr("queue_running"))
+            self.show_warning(self.tr("warning"), self.tr("queue_running"))
             return
+        self._clear_completed_tasks_now()
+        self.refresh_queue_tree()
+
+    def _clear_completed_tasks_now(self):
         with self.queue_lock:
             self.upload_queue = [t for t in self.upload_queue if t.status not in {"done", "cancelled"}]
-        self.refresh_queue_tree()
 
     def retry_failed_tasks(self):
         if self.queue_running:
-            messagebox.showwarning(self.tr("warning"), self.tr("queue_running"))
+            self.show_warning(self.tr("warning"), self.tr("queue_running"))
             return
         changed = False
         with self.queue_lock:
@@ -1633,7 +1770,7 @@ class App(tk.Tk):
         if free_bytes is None or pending_bytes <= 0:
             return True
         if pending_bytes > free_bytes:
-            messagebox.showwarning(
+            self.show_warning(
                 self.tr("warning"),
                 self.tr("space_check_insufficient").format(
                     free=fmt_size(free_bytes),
@@ -1643,7 +1780,7 @@ class App(tk.Tk):
             return False
         safety_floor = 96 * 1024
         if free_bytes - pending_bytes < safety_floor:
-            return messagebox.askyesno(
+            return self.ask_yes_no(
                 self.tr("warning"),
                 self.tr("space_check_low").format(
                     free=fmt_size(free_bytes),
@@ -1657,12 +1794,12 @@ class App(tk.Tk):
 
     def start_queue(self):
         if self.queue_running:
-            messagebox.showwarning(self.tr("warning"), self.tr("queue_running"))
+            self.show_warning(self.tr("warning"), self.tr("queue_running"))
             return
         with self.queue_lock:
             pending = [t for t in self.upload_queue if t.status in {"waiting", "retrying"}]
         if not pending:
-            messagebox.showwarning(self.tr("warning"), self.tr("queue_empty_start"))
+            self.show_warning(self.tr("warning"), self.tr("queue_empty_start"))
             return
         if not self._preflight_check_available_space():
             return
@@ -1683,17 +1820,17 @@ class App(tk.Tk):
 
         def done(_):
             self._set_queue_controls_enabled(True)
-            self.clear_completed_tasks()
+            self._clear_completed_tasks_now()
             self.refresh_queue_tree()
             if self.queue_stop_reason:
                 self.set_status(self.queue_stop_reason)
-                messagebox.showwarning(self.tr("warning"), self.queue_stop_reason)
+                self.show_warning(self.tr("warning"), self.queue_stop_reason)
             elif self.cancel_event.is_set():
                 self.set_status(self.tr("queue_cancelled_done"))
             else:
                 self.set_status(self.tr("queue_finished"))
             self.cancel_event.clear()
-            self.refresh_both_views(background=True)
+            self.after(50, lambda: self.refresh_both_views(background=True))
             self._reset_queue_runtime_labels(keep_status=True)
 
         started = self.run_job(job, done)
@@ -1875,46 +2012,64 @@ class App(tk.Tk):
             self.refresh_queue_tree()
 
         if background:
+            if self.worker and self.worker.is_alive():
+                self.after(100, lambda: self.refresh_both_views(background=True))
+                return
             self.run_job(job, done)
         else:
             done(self.client.list_files() if self.client.ser else self.files)
 
     def backup_zip(self):
-        out = filedialog.asksaveasfilename(title=self.tr("save_backup_title"), defaultextension=".zip", filetypes=[("ZIP", "*.zip")], initialfile="myradio_spiffs_mentes.zip" if self.lang == "HU" else "myradio_spiffs_backup.zip")
+        out = filedialog.asksaveasfilename(title=self.tr("save_backup_title"), defaultextension=".zip", filetypes=[("ZIP", "*.zip")], initialfile="myradio_spiffs_mentes.zip" if self.lang == "HU" else "myradio_spiffs_backup.zip", parent=self._prepare_dialog_parent())
         if not out:
             return
         out_path = Path(out)
 
         def job():
             self.ensure_connected()
-            files = self.client.list_files()
+            files = self._apply_known_remote_paths(self.client.list_files())
             if not files:
                 raise ProtoError(self.tr("no_files"))
             self.set_status(self.tr("status_saving"))
-            total_files = len(files)
-            total_bytes = sum(rf.size for rf in files)
+            backup_files = [rf for rf in files if not getattr(rf, "is_dir", False)]
+            if not backup_files:
+                raise ProtoError(self.tr("no_files"))
+            backup_dirs = {normalize_remote_path(rf.path) for rf in files if getattr(rf, "is_dir", False)}
+            for rf in backup_files:
+                parts = [part for part in normalize_remote_path(rf.path).strip("/").split("/") if part]
+                current = ""
+                for part in parts[:-1]:
+                    current += "/" + part
+                    backup_dirs.add(current)
+            total_files = len(backup_files)
+            total_bytes = sum(rf.size for rf in backup_files)
             transferred = 0
             start = time.time()
             self.after(0, self._reset_transfer_metrics)
             with zipfile.ZipFile(out_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-                for idx, rf in enumerate(files, 1):
-                    data = self.client.read_file(rf.path)
-                    zf.writestr(rf.path.lstrip("/"), data)
+                for dir_path in sorted(backup_dirs, key=lambda x: (x.count("/"), x.lower())):
+                    arcname = dir_path.strip("/")
+                    if arcname:
+                        zf.writestr(arcname.rstrip("/") + "/", b"")
+                for idx, rf in enumerate(backup_files, 1):
+                    remote_path = normalize_remote_path(rf.path)
+                    data = self.client.read_file(remote_path)
+                    zf.writestr(remote_path.lstrip("/"), data)
                     transferred += len(data)
-                    self._set_transfer_metrics(Path(rf.path).name, idx, total_files, transferred, total_bytes, start)
-                    self.set_status(f"{self.tr('status_saving')} {idx}/{total_files} - {rf.path}")
+                    self._set_transfer_metrics(Path(remote_path).name, idx, total_files, transferred, total_bytes, start)
+                    self.set_status(f"{self.tr('status_saving')} {idx}/{total_files} - {remote_path}")
             return True
 
         def done(_):
             self._reset_transfer_metrics()
             self.refresh_both_views(background=True)
             self.set_status(self.tr("backup_done"))
-            messagebox.showinfo(self.tr("done"), self.tr("backup_done"))
+            self.show_info(self.tr("done"), self.tr("backup_done"))
 
         self.run_job(job, done)
 
     def restore_zip(self):
-        zpath = filedialog.askopenfilename(title=self.tr("open_backup_title"), filetypes=[("ZIP", "*.zip")])
+        zpath = filedialog.askopenfilename(title=self.tr("open_backup_title"), filetypes=[("ZIP", "*.zip")], parent=self._prepare_dialog_parent())
         if not zpath:
             return
         zp = Path(zpath)
@@ -1945,7 +2100,7 @@ class App(tk.Tk):
         def done(_):
             self._reset_transfer_metrics()
             self.refresh_both_views(background=True)
-            messagebox.showinfo(self.tr("done"), self.tr("restore_done"))
+            self.show_info(self.tr("done"), self.tr("restore_done"))
 
         self.run_job(job, done)
 
@@ -1954,7 +2109,7 @@ class App(tk.Tk):
         name = simpledialog.askstring(
             self.tr("mkdir"),
             self.tr("enter_dir_name"),
-            parent=self,
+            parent=self._prepare_dialog_parent(),
         )
         if name is None:
             return
@@ -1972,20 +2127,20 @@ class App(tk.Tk):
         def done(_):
             self._remember_remote_path(remote_path, 0, True)
             self.refresh_both_views(background=True)
-            messagebox.showinfo(self.tr("done"), self.tr("mkdir_done"))
+            self.show_info(self.tr("done"), self.tr("mkdir_done"))
 
         self.run_job(job, done)
 
     def download_selected(self):
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning(self.tr("warning"), self.tr("tree_no_selection"))
+            self.show_warning(self.tr("warning"), self.tr("tree_no_selection"))
             return
         path, is_file = self._item_remote_path(selection[0])
         if not is_file:
-            messagebox.showwarning(self.tr("warning"), self.tr("tree_no_selection"))
+            self.show_warning(self.tr("warning"), self.tr("tree_no_selection"))
             return
-        out = filedialog.asksaveasfilename(title=self.tr("save_selected_title"), initialfile=Path(path).name)
+        out = filedialog.asksaveasfilename(title=self.tr("save_selected_title"), initialfile=Path(path).name, parent=self._prepare_dialog_parent())
         if not out:
             return
         out_path = Path(out)
@@ -1999,21 +2154,21 @@ class App(tk.Tk):
 
         def done(_):
             self.refresh_both_views(background=True)
-            messagebox.showinfo(self.tr("done"), self.tr("download_done"))
+            self.show_info(self.tr("done"), self.tr("download_done"))
 
         self.run_job(job, done)
 
     def delete_selected(self):
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning(self.tr("warning"), self.tr("tree_no_selection"))
+            self.show_warning(self.tr("warning"), self.tr("tree_no_selection"))
             return
 
         selected_items = [self._item_remote_path(item_id) for item_id in selection]
 
         def job():
             self.ensure_connected()
-            files = self.client.list_files()
+            files = self._apply_known_remote_paths(self.client.list_files())
             all_file_paths = [f.path for f in files if not getattr(f, "is_dir", False)]
             all_dir_paths = [f.path for f in files if getattr(f, "is_dir", False)]
             target_files = set()
@@ -2049,7 +2204,9 @@ class App(tk.Tk):
                     except Exception as rmdir_error:
                         dir_errors.append(f"{target}: {rmdir_error or delete_error}")
 
-            remaining = self.client.list_files()
+            for path, _ in requested_paths:
+                self._forget_remote_path_tree(path)
+            remaining = self._apply_known_remote_paths(self.client.list_files())
             remaining_paths = [f.path for f in remaining]
             still_present = []
             for path, is_file in requested_paths:
@@ -2071,7 +2228,7 @@ class App(tk.Tk):
 
         def done(_):
             self.refresh_both_views(background=True)
-            messagebox.showinfo(self.tr("done"), self.tr("delete_done"))
+            self.show_info(self.tr("done"), self.tr("delete_done"))
 
         self.run_job(job, done)
 
@@ -2084,7 +2241,7 @@ class App(tk.Tk):
 
         def done(_):
             self.disconnect()
-            messagebox.showinfo(self.tr("done"), self.tr("reboot_done"))
+            self.show_info(self.tr("done"), self.tr("reboot_done"))
 
         self.run_job(job, done)
 

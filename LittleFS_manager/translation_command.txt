@@ -1,1 +1,3 @@
-py -m PyInstaller --noconsole --onefile LittleFS-SPIFFS_Partition_Manager_v0.3.4.py
+@echo off
+py -3.14 -m PyInstaller --onefile --windowed --icon=icon.ico --add-data "icon.ico;." --version-file=version_info.txt --name "LittleFS-SPIFFS Partition Manager" LittleFS-SPIFFS_Partition_Manager_v0.3.4.py
+pause
