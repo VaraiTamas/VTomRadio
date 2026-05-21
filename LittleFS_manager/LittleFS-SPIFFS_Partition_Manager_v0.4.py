@@ -20,7 +20,15 @@ except Exception:
     serial = None
     list_ports = None
 
+<<<<<<< Updated upstream
+<<<<<<<< Updated upstream:LittleFS_manager/LittleFS-SPIFFS_Partition_Manager_v0.4.py
 APP_VERSION = "0.4"
+========
+APP_VERSION = "0.3.4-estimated-fs"
+>>>>>>>> Stashed changes:LittleFS_manager/LittleFS-SPIFFS_Partition_Manager_v0.3.4.py
+=======
+APP_VERSION = "0.4"
+>>>>>>> Stashed changes
 DEFAULT_BAUDRATE = 460800
 # Upload tuning:
 # 96 bytes is the old proven-safe mode, but it is extremely slow because every chunk
@@ -40,10 +48,20 @@ WRITE_DATA_TIMEOUT_RESTORE = 5.0
 WRITE_END_TIMEOUT = 6.0
 MAX_AUTO_RETRIES = 1
 DEFAULT_SPIFFS_CAPACITY_KB = 896
+<<<<<<< Updated upstream
+<<<<<<<< Updated upstream:LittleFS_manager/LittleFS-SPIFFS_Partition_Manager_v0.4.py
+=======
+>>>>>>> Stashed changes
 MAX_PROTO_LINE_BYTES = 8 * 1024 * 1024
 SERIAL_READ_CHUNK_BYTES = 4096
 READ_LINE_TIMEOUT = 25.0
 READ_FILE_RETRIES = 1
+<<<<<<< Updated upstream
+========
+MAX_PROTO_LINE_BYTES = 2 * 1024 * 1024
+>>>>>>>> Stashed changes:LittleFS_manager/LittleFS-SPIFFS_Partition_Manager_v0.3.4.py
+=======
+>>>>>>> Stashed changes
 FS_PROFILE_CHOICES = (
     ("myradio_896", "myRadio / 896 KB", 896),
     ("vtomradio_yoradio_16mb_3904", "VTomRadio LittleFS 3.8 MB", 3904),
@@ -839,9 +857,21 @@ class App(tk.Tk):
         self.known_remote_file_paths: dict[tuple[str, int], str] = {}
         self.known_remote_dir_paths: set[str] = {"/"}
         self.queue_stop_reason: str | None = None
+<<<<<<< Updated upstream
+<<<<<<<< Updated upstream:LittleFS_manager/LittleFS-SPIFFS_Partition_Manager_v0.4.py
         self.fs_profile_key = "disabled"
         self.fs_profile_name = "Kikapcsolva"
         self.spiffs_capacity_kb = None
+========
+        self.fs_profile_key = "myradio_896"
+        self.fs_profile_name = "myRadio / 896 KB"
+        self.spiffs_capacity_kb = DEFAULT_SPIFFS_CAPACITY_KB
+>>>>>>>> Stashed changes:LittleFS_manager/LittleFS-SPIFFS_Partition_Manager_v0.3.4.py
+=======
+        self.fs_profile_key = "myradio_896"
+        self.fs_profile_name = "myRadio / 896 KB"
+        self.spiffs_capacity_kb = DEFAULT_SPIFFS_CAPACITY_KB
+>>>>>>> Stashed changes
 
         self.title(f"{self.tr('title')} v{APP_VERSION}")
         self.geometry("1180x860")
@@ -868,7 +898,14 @@ class App(tk.Tk):
         self.eta_var = tk.StringVar(value="--:--")
         self.failures_var = tk.StringVar(value="0")
         self.fs_estimate_var = tk.StringVar(value=self.tr("fs_estimate_unknown"))
+<<<<<<< Updated upstream
+<<<<<<<< Updated upstream:LittleFS_manager/LittleFS-SPIFFS_Partition_Manager_v0.4.py
         self.verify_backup_var = tk.BooleanVar(value=False)
+========
+>>>>>>>> Stashed changes:LittleFS_manager/LittleFS-SPIFFS_Partition_Manager_v0.3.4.py
+=======
+        self.verify_backup_var = tk.BooleanVar(value=False)
+>>>>>>> Stashed changes
 
         self._build_ui()
         self.update_fs_estimate()
@@ -1393,7 +1430,14 @@ class App(tk.Tk):
                 break
         apply_theme(self, self._dark_mode)
         self.update_fs_estimate()
+<<<<<<< Updated upstream
+<<<<<<<< Updated upstream:LittleFS_manager/LittleFS-SPIFFS_Partition_Manager_v0.4.py
         self.populate_tree(restore_state=self._capture_tree_state())
+========
+>>>>>>>> Stashed changes:LittleFS_manager/LittleFS-SPIFFS_Partition_Manager_v0.3.4.py
+=======
+        self.populate_tree(restore_state=self._capture_tree_state())
+>>>>>>> Stashed changes
         self.refresh_queue_tree()
         self.after_idle(self._on_window_layout_change)
 
