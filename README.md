@@ -111,6 +111,17 @@ A névnapok megjelenítése a WEB-es felületen kikapcsolható options/ SYSTEM->
    - 3D nyomtatási terv --> https://www.printables.com/model/1621877-yoradio-case-for-ips-ctp-35-inch-spi-red-ili9488-f
 
 ## Version history: 
+### v0.1.0
+- Első stabil kiadás.   
+   Kizárólag az alábbi kijelzők támogatottak:   
+   - ILI9488 480x320 felbontású SPI LCD
+   - ST7796 480x320 felbontású SPI LCD
+### v0.0.10
+- A WEB UI-hoz hozzáadva az IR Recorder CSV export és import funkció
+- LittleFS-SPIFFS Partition Manager v0.4.0 program hozzáadva. (by Botfai Tibor)  
+   [Bővebben itt olvasható.](LittleFS_manager\Readme.md)
+- A kijelző óra fontjai bővültek az Android fonttal
+- Stabilítási javítások a WEB UI-ban
 ### v0.0.9
 - Kijelző stabilítási javítások, optimalizálás.
 - Theme editor használata során ESP32 összeomlásának javítása.
