@@ -349,13 +349,12 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
 #ifndef RSSI_STEPS
   #define RSSI_STEPS       -50,-60,-70,-80
 #endif
-#define VT_DIGI 1
-#define VT_DIGI_OLD 2
+
+/*------------------ CLOCK FONTS -----------------*/
 #define CLOCKFONT_STYLE_DIGI7 0
 #define CLOCKFONT_STYLE_CALIBRI 1
-#ifndef CLOCKFONT
-  #define CLOCKFONT    VT_DIGI     
-#endif
+#define CLOCKFONT_STYLE_ANDROIDCLOCK 2
+
 #ifndef CLOCKFONT_STYLE
   #define CLOCKFONT_STYLE CLOCKFONT_STYLE_DIGI7
 #endif
@@ -373,6 +372,7 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
 #    define CLOCK_AM_PM_STYLE_DEFAULT false
 #  endif
 #endif
+
 #ifndef MAX_AUDIO_SOCKET_TIMEOUT
   #define MAX_AUDIO_SOCKET_TIMEOUT   false     // max audio socket timeout?
 #endif
@@ -390,7 +390,7 @@ STORE YOUR SETTINGS IN THE *** myoptions.h *** FILE.
   #define DTYPE INITR_BLACKTAB
 #endif
 
-/*        IR                      */
+/*---------------- IR -----------------*/
 #ifndef IR_PIN
   #define IR_PIN                255
 #endif

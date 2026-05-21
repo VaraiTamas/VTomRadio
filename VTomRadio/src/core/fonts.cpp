@@ -22,6 +22,8 @@ static uint8_t* font_vlw_clock_digi = nullptr;
 static uint8_t* font_vlw_clock_sec_digi = nullptr;
 static uint8_t* font_vlw_clock_calibri = nullptr;
 static uint8_t* font_vlw_clock_sec_calibri = nullptr;
+static uint8_t* font_vlw_clock_android = nullptr;
+static uint8_t* font_vlw_clock_sec_android = nullptr;
 
 // ================= GFX FONTOK =================
 using namespace lgfx::v1::fonts;
@@ -101,14 +103,16 @@ bool loadFonts() {
     font_vlw_clock_sec_digi    = loadFontFile("/fonts/digi7_it_47.vlw");
     font_vlw_clock_calibri     = loadFontFile("/fonts/calibri_94.vlw");
     font_vlw_clock_sec_calibri = loadFontFile("/fonts/calibri_47.vlw");
+    font_vlw_clock_android     = loadFontFile("/fonts/androidclock_89.vlw");
+    font_vlw_clock_sec_android = loadFontFile("/fonts/androidclock_44.vlw");
 
     setClockFontStyle(config.store.clockFontStyle);
 
     bool required = font_vlw_9 && font_vlw_12 && font_vlw_16 && font_vlw_18 &&
                     font_vlw_20 && font_vlw_22 && font_vlw_24 && font_vlw_26 && font_vlw_36;
-    bool optional = (font_vlw_clock_digi && font_vlw_clock_sec_digi) || (font_vlw_clock_calibri && font_vlw_clock_sec_calibri);
+    bool optional = (font_vlw_clock_digi && font_vlw_clock_sec_digi) || (font_vlw_clock_calibri && font_vlw_clock_sec_calibri) || (font_vlw_clock_android && font_vlw_clock_sec_android);
 
-    if (!optional) Serial.println("[FONT] Optional fonts not fully loaded – now uses default GFX fonts.");
+    if (!optional) Serial.println("[FONT] Optional fonts not fully loaded now uses default GFX fonts.");
     return required;
 }
 
@@ -116,6 +120,9 @@ void setClockFontStyle(uint8_t style) {
     if (style == CLOCKFONT_STYLE_CALIBRI) {
         font_vlw_clock = font_vlw_clock_calibri;
         font_vlw_clock_sec = font_vlw_clock_sec_calibri;
+    } else if (style == CLOCKFONT_STYLE_ANDROIDCLOCK) {
+        font_vlw_clock = font_vlw_clock_android;
+        font_vlw_clock_sec = font_vlw_clock_sec_android;
     } else {
         font_vlw_clock = font_vlw_clock_digi;
         font_vlw_clock_sec = font_vlw_clock_sec_digi;
@@ -124,10 +131,14 @@ void setClockFontStyle(uint8_t style) {
 
 void getClockFontStylePointers(uint8_t style, uint8_t** mainFont, uint8_t** secFont) {
     if (mainFont) {
-        *mainFont = (style == CLOCKFONT_STYLE_CALIBRI) ? font_vlw_clock_calibri : font_vlw_clock_digi;
+        if (style == CLOCKFONT_STYLE_CALIBRI)           *mainFont = font_vlw_clock_calibri;
+        else if (style == CLOCKFONT_STYLE_ANDROIDCLOCK) *mainFont = font_vlw_clock_android;
+        else                                             *mainFont = font_vlw_clock_digi;
     }
     if (secFont) {
-        *secFont = (style == CLOCKFONT_STYLE_CALIBRI) ? font_vlw_clock_sec_calibri : font_vlw_clock_sec_digi;
+        if (style == CLOCKFONT_STYLE_CALIBRI)           *secFont = font_vlw_clock_sec_calibri;
+        else if (style == CLOCKFONT_STYLE_ANDROIDCLOCK) *secFont = font_vlw_clock_sec_android;
+        else                                             *secFont = font_vlw_clock_sec_digi;
     }
 }
 
@@ -184,6 +195,14 @@ void freeFonts() {
     if (font_vlw_clock_sec_calibri) {
         free(font_vlw_clock_sec_calibri);
         font_vlw_clock_sec_calibri = nullptr;
+    }
+    if (font_vlw_clock_android) {
+        free(font_vlw_clock_android);
+        font_vlw_clock_android = nullptr;
+    }
+    if (font_vlw_clock_sec_android) {
+        free(font_vlw_clock_sec_android);
+        font_vlw_clock_sec_android = nullptr;
     }
 
     font_vlw_clock = nullptr;

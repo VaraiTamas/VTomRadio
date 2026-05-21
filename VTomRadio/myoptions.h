@@ -105,7 +105,7 @@ Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not 
 /*----- This way, you can wake up the device with a remote control and another button. -----*/
 //#define BTN_MODE ENC_BTNB
 #define WAKE_PIN1 IR_PIN
-#define WAKE_PIN2 ENC2_BTNB
+#define WAKE_PIN2 ENC_BTNB
 
 /*----- SD CARD -----*/
 // #define SDC_CS     18

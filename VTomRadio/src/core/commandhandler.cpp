@@ -347,7 +347,7 @@ bool CommandHandler::exec(const char* command, const char* value, uint8_t cid) {
     }
     if (strEquals(command, "clockfont")) {
         uint8_t style = static_cast<uint8_t>(atoi(value));
-        if (style > CLOCKFONT_STYLE_CALIBRI) { style = CLOCKFONT_STYLE_DIGI7; }
+        if (style > CLOCKFONT_STYLE_ANDROIDCLOCK) { style = CLOCKFONT_STYLE_DIGI7; }
         config.saveValue(&config.store.clockFontStyle, style);
         if (style != CLOCKFONT_STYLE_DIGI7 && config.store.clockFontMono) {
             config.saveValue(&config.store.clockFontMono, false);

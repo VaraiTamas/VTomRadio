@@ -5,7 +5,7 @@ a = Analysis(
     ['LittleFS-SPIFFS_Partition_Manager_v0.4.py'],
     pathex=[],
     binaries=[],
-    datas=[('icon.ico', '.')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -36,5 +36,4 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     version='version_info.txt',
-    icon=['icon.ico'],
 )

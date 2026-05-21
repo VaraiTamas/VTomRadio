@@ -67,17 +67,22 @@ void ClockWidget::_calcSize() {
     uint8_t* digiSec = nullptr;
     uint8_t* calMain = nullptr;
     uint8_t* calSec = nullptr;
+    uint8_t* androidMain = nullptr;
+    uint8_t* androidSec = nullptr;
     getClockFontStylePointers(CLOCKFONT_STYLE_DIGI7, &digiMain, &digiSec);
     getClockFontStylePointers(CLOCKFONT_STYLE_CALIBRI, &calMain, &calSec);
+    getClockFontStylePointers(CLOCKFONT_STYLE_ANDROIDCLOCK, &androidMain, &androidSec);
 
     uint16_t wTimeDigi = 0, hTimeDigi = 0, wSecDigi = 0, hSecDigi = 0;
     uint16_t wTimeCalibri = 0, hTimeCalibri = 0, wSecCalibri = 0, hSecCalibri = 0;
+    uint16_t wTimeAndroid = 0, hTimeAndroid = 0, wSecAndroid = 0, hSecAndroid = 0;
     measureClockStyle(digiMain, digiSec, wTimeDigi, hTimeDigi, wSecDigi, hSecDigi);
     measureClockStyle(calMain, calSec, wTimeCalibri, hTimeCalibri, wSecCalibri, hSecCalibri);
+    measureClockStyle(androidMain, androidSec, wTimeAndroid, hTimeAndroid, wSecAndroid, hSecAndroid);
 
-    uint16_t w_time = max<uint16_t>(wTimeDigi, wTimeCalibri);
-    uint16_t h_time = max<uint16_t>(hTimeDigi, hTimeCalibri);
-    uint16_t w_sec = max<uint16_t>(wSecDigi, wSecCalibri);
+    uint16_t w_time = max<uint16_t>(max<uint16_t>(wTimeDigi, wTimeCalibri), wTimeAndroid);
+    uint16_t h_time = max<uint16_t>(max<uint16_t>(hTimeDigi, hTimeCalibri), hTimeAndroid);
+    uint16_t w_sec = max<uint16_t>(max<uint16_t>(wSecDigi, wSecCalibri), wSecAndroid);
     _secHeight = max<uint16_t>(hSecDigi, hSecCalibri);
 
     uint16_t w_right = w_sec;
