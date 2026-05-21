@@ -136,8 +136,8 @@ When music is not playing (stopped or volume is 0), the pin is set to LOW. This 
 
 /*----- by Zsolt Simon -----*/
 /*----- Tested on Synology NAS ----- */
- #define USE_DLNA
- #define dlnaHost "192.168.1.200"
- #define dlnaIDX  21
+// #define USE_DLNA
+// #define dlnaHost "192.168.1.200"
+// #define dlnaIDX  21
 
 //#define POWER_LED 38      // Button LED pin (will be turned on when player is on)
