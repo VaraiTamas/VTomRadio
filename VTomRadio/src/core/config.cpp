@@ -1526,7 +1526,7 @@ bool Config::loadStation(uint16_t ls) {
     if (cs == 0) {
         memset(station.url, 0, BUFLEN);
         memset(station.name, 0, BUFLEN);
-        strncpy(station.name, "yoRadio", BUFLEN);
+        strncpy(station.name, "VTom Radio", BUFLEN);
         station.ovol = 0;
         return false;
     }

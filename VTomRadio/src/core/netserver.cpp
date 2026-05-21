@@ -72,6 +72,133 @@ static constexpr uint32_t WIFI_SCAN_CACHE_TTL_MS = 15000;
 static constexpr uint32_t WIFI_SCAN_MAX_WAIT_MS = 15000;
 static bool     g_webboardUploadHadError = false;
 
+#if IR_PIN != 255
+static bool parseIrCodeToken(const String &token, uint64_t &outValue) {
+  String normalized = token;
+  normalized.trim();
+  if (!normalized.length()) {
+    outValue = 0;
+    return true;
+  }
+
+  char *end = nullptr;
+  unsigned long long parsed = strtoull(normalized.c_str(), &end, 0);
+  if (end == normalized.c_str()) {
+    return false;
+  }
+  while (*end == ' ') {
+    ++end;
+  }
+  if (*end != '\0') {
+    return false;
+  }
+  outValue = static_cast<uint64_t>(parsed);
+  return true;
+}
+
+static int splitSimpleCsvLine(const String &line, String tokens[], int maxTokens) {
+  int tokenCount = 0;
+  int start = 0;
+  for (int i = 0; i <= static_cast<int>(line.length()) && tokenCount < maxTokens; i++) {
+    bool isDelimiter = (i == static_cast<int>(line.length())) || line[i] == ',' || line[i] == ';' || line[i] == '\t';
+    if (!isDelimiter) {
+      continue;
+    }
+    tokens[tokenCount] = line.substring(start, i);
+    tokens[tokenCount].trim();
+    tokenCount++;
+    start = i + 1;
+  }
+  return tokenCount;
+}
+
+static String buildIrCodesCsv() {
+  String out;
+  out.reserve(900);
+  out += "button,bank0,bank1,bank2\n";
+  char valBuf[32];
+  for (int btn = 0; btn < 20; btn++) {
+    out += String(btn);
+    for (int bank = 0; bank < 3; bank++) {
+      snprintf(valBuf, sizeof(valBuf), ",0x%llX", config.ircodes.irVals[btn][bank]);
+      out += valBuf;
+    }
+    out += "\n";
+  }
+  return out;
+}
+
+static bool importIrCodesCsv(const String &csv, String &error) {
+  ircodes_t imported = config.ircodes;
+  bool anyImported = false;
+  int pos = 0;
+
+  while (pos <= static_cast<int>(csv.length())) {
+    int lineEnd = csv.indexOf('\n', pos);
+    if (lineEnd < 0) {
+      lineEnd = csv.length();
+    }
+
+    String line = csv.substring(pos, lineEnd);
+    line.trim();
+    pos = lineEnd + 1;
+
+    if (!line.length()) {
+      continue;
+    }
+
+    String cols[4];
+    int colCount = splitSimpleCsvLine(line, cols, 4);
+    if (colCount < 4) {
+      if (!anyImported && (line.startsWith("button") || line.startsWith("Button"))) {
+        continue;
+      }
+      error = "invalid csv row";
+      return false;
+    }
+
+    char *btnEnd = nullptr;
+    long btnIdx = strtol(cols[0].c_str(), &btnEnd, 10);
+    if (btnEnd == cols[0].c_str() || *btnEnd != '\0') {
+      if (!anyImported && (cols[0].startsWith("button") || cols[0].startsWith("Button"))) {
+        continue;
+      }
+      error = "invalid button index";
+      return false;
+    }
+    if (btnIdx < 0 || btnIdx >= 20) {
+      error = "button index out of range";
+      return false;
+    }
+
+    for (int bank = 0; bank < 3; bank++) {
+      uint64_t parsed = 0;
+      if (!parseIrCodeToken(cols[bank + 1], parsed)) {
+        error = "invalid IR value";
+        return false;
+      }
+      // Repeat sentinel codes are not valid standalone mappings in runtime.
+      if (parsed == UINT64_MAX || parsed == 0xFFFFFFFFULL) {
+        parsed = 0;
+      }
+      imported.irVals[btnIdx][bank] = parsed;
+    }
+
+    anyImported = true;
+  }
+
+  if (!anyImported) {
+    error = "no IR rows found";
+    return false;
+  }
+
+  config.ircodes = imported;
+  config.saveIR();
+  netserver.irValsToWs();
+  return true;
+}
+#endif
+
 static bool isEmptyFsKnownPath(const String &url) {
   return url == "/" || url == "/webboard" || url == "/variables.js" || url == "/wifiscan" || url == "/favicon.ico" || url == "/emergency";
 }
@@ -679,6 +806,67 @@ bool NetServer::begin(bool quiet) {
     response->addHeader("Cache-Control", "max-age=31536000");
     request->send(response);
   });
+
+#if IR_PIN != 255
+  webserver.on("/ircodes.csv", HTTP_GET, [](AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/csv", buildIrCodesCsv());
+    response->addHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    response->addHeader("Pragma", "no-cache");
+    response->addHeader("Content-Disposition", "attachment; filename=\"ircodes.csv\"");
+    request->send(response);
+  });
+
+  webserver.on(
+    "/ircodes.csv", HTTP_POST,
+    [](AsyncWebServerRequest *request) {
+      if (!request->_tempFile) {
+        request->send(400, "application/json", "{\"error\":\"csv body missing\"}");
+        return;
+      }
+
+      request->_tempFile.close();
+      File file = LittleFS.open(TMP_PATH, "r");
+      if (!file) {
+        request->send(500, "application/json", "{\"error\":\"cannot read uploaded csv\"}");
+        return;
+      }
+
+      String csv;
+      csv.reserve(file.size() + 1);
+      while (file.available()) {
+        csv += file.readStringUntil('\n');
+        csv += '\n';
+      }
+      file.close();
+      LittleFS.remove(TMP_PATH);
+
+      String err;
+      if (!importIrCodesCsv(csv, err)) {
+        request->send(400, "application/json", "{\"error\":\"" + err + "\"}");
+        return;
+      }
+
+      request->send(200, "application/json", "{\"ok\":true}");
+    },
+    nullptr,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      if (index == 0) {
+        if (LittleFS.exists(TMP_PATH)) {
+          LittleFS.remove(TMP_PATH);
+        }
+        request->_tempFile = LittleFS.open(TMP_PATH, "w");
+      }
+
+      if (request->_tempFile && len > 0) {
+        request->_tempFile.write(data, len);
+      }
+
+      if (index + len == total && request->_tempFile) {
+        request->_tempFile.flush();
+      }
+    }
+  );
+#endif
 
   webserver.serveStatic("/", LittleFS, "/www/");
   webserver.begin();

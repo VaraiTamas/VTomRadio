@@ -1,8 +1,8 @@
 // clang-format off
 /* https://trip5.github.io/ehRadio_myoptions/generator.html
-   https://github.com/VaraiTamas/yoRadio.git
+   https://github.com/VaraiTamas/VTomRadio.git
    Használat előtt olvasd el!!! - Read the before use !!!
-   https://github.com/VaraiTamas/yoRadio/blob/main/README.md !!!
+   https://github.com/VaraiTamas/VTomRadio/blob/main/README.md !!!
 
   - A sor elején a // jel inaktívvá teszi a parancsot ezért a fordító nem veszi figyelembe! 
     Ezzel tudod beállítani a te hardveredmek megfelelő összeállítást.
@@ -25,7 +25,7 @@
 
 /* -- Névnapok megjelenítése -- Display name days --
 Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not filled in.) */
-#define NAMEDAYS_FILE HU
+//#define NAMEDAYS_FILE HU
 
 #define USE_BUILTIN_LED false /* The RGB LED does not turn on.. */
 
@@ -136,10 +136,8 @@ When music is not playing (stopped or volume is 0), the pin is set to LOW. This 
 
 /*----- by Zsolt Simon -----*/
 /*----- Tested on Synology NAS ----- */
- #define USE_DLNA
- #define dlnaHost "192.168.1.200"
- #define dlnaIDX  21
+// #define USE_DLNA
+// #define dlnaHost "192.168.1.200"
+// #define dlnaIDX  21
 
 //#define POWER_LED 38      // Button LED pin (will be turned on when player is on)
-
-// Serial LittleFS maintenance mode is now controlled in Web UI: Tools > Serial LittleFS maintenance mode

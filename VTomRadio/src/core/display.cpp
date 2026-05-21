@@ -52,13 +52,9 @@ static void purgeQueuedRequestType(displayRequestType_e type) {
     size_t          keepCount = 0;
     requestParams_t item;
     while (xQueueReceive(displayQueue, &item, 0) == pdTRUE) {
-        if (item.type != type && keepCount < (sizeof(keep) / sizeof(keep[0]))) {
-            keep[keepCount++] = item;
-        }
+        if (item.type != type && keepCount < (sizeof(keep) / sizeof(keep[0]))) { keep[keepCount++] = item; }
     }
-    for (size_t i = 0; i < keepCount; i++) {
-        xQueueSend(displayQueue, &keep[i], 0);
-    }
+    for (size_t i = 0; i < keepCount; i++) { xQueueSend(displayQueue, &keep[i], 0); }
 }
 
 void Display::purgeQueuedRequestType(displayRequestType_e type) {
@@ -137,12 +133,10 @@ void Display::init() {
     dsp.initDisplay(); // void DspCore::initDisplay() - Ez a függvény hívja meg a display inicializálását, ami a DspCore osztályban van definiálva. Ez a függvény felelős a kijelző beállításáért és
                        // előkészítéséért a használatra.
 
-
-
     if (!loadFonts()) {
-        Serial.println("[FONT] HIBA: Egy vagy tobb kotelezo font hianyzik a LittleFS-rol!");
+        Serial.println("[FONT] ERROR: One or more binding fonts are missing from LittleFS!");
     } else {
-        Serial.println("[FONT] Kotelezo fontok sikeresen betoltve.");
+        Serial.println("[FONT] Binding fonts successfully loaded.");
     }
 
     // --- QUEUE ---
@@ -416,9 +410,7 @@ void Display::_swichMode(displayMode_e newmode) {
         config.isScreensaver = false;
         _pager->setPage(pages[PG_PLAYER]);
         if (_nums) { _nums->setText(""); }
-        if (_vuwidget) {
-            _vuwidget->lock(!config.store.vumeter);
-        }
+        if (_vuwidget) { _vuwidget->lock(!config.store.vumeter); }
         config.setDspOn(config.store.dspon, false);
         pm.on_display_player();
     }
@@ -635,9 +627,7 @@ void Display::loop() {
 #    endif
                     break;
 
-                case INVALIDATETHEMEWIDGETS:
-                    invalidateThemeWidgets();
-                    break;
+                case INVALIDATETHEMEWIDGETS: invalidateThemeWidgets(); break;
 
                 case BOOTSTRING:
                     if (_bootstring) { _bootstring->setText(config.ssids[request.payload].ssid, LANG::bootstrFmt); }

@@ -304,7 +304,7 @@ bool DlnaIndex::browseAndDecide(const String& controlUrl, const String& objectId
 
 // ================================================================
 // Playlist builder: deep traverse containers and append tracks
-// Writes yoRadio format: title \t url \t ovol
+// Writes VTomRadio format: title \t url \t ovol
 // ================================================================
 bool DlnaIndex::appendTracksToFile(const String& didl, fs::File& f, uint32_t& appended, uint32_t hardLimit) {
   std::vector<String> iids, ititles, iurls;

@@ -56,6 +56,10 @@ bool BitrateWidget::_applyFont() {
     if (_box.textsize == 20 && font_vlw_20) {
         _spr->loadFont(font_vlw_20);
         _spr->setTextSize(1);
+        _usingVlw = true;    
+    }else if(_box.textsize == 22 && font_vlw_22) {
+        _spr->loadFont(font_vlw_22);
+        _spr->setTextSize(1);
         _usingVlw = true;
     } else {
         _spr->unloadFont();

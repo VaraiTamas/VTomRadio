@@ -389,6 +389,13 @@ void irLoop() {
                     Serial.printf("controls.cpp--> irLoop--> xQueueReceive: update config.irBankId: %d \n", config.irBankId);
                 }
             }
+
+            // Do not record protocol repeat frames (e.g. NEC repeat), those are not usable as standalone button codes.
+            if (irResults.repeat || irResults.value == UINT64_MAX || irResults.value == 0xFFFFFFFFULL) {
+                irrecv.resume();
+                return;
+            }
+
             Serial.print(resultToHumanReadableBasic(&irResults));
             Serial.println("-------------------------------");
             config.ircodes.irVals[config.irBtnId][config.irBankId] = irResults.value;

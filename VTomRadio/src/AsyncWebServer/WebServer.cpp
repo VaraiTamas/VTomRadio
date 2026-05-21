@@ -21,6 +21,10 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
+#ifndef ASYNCWEBSERVER_RX_TIMEOUT
+  #define ASYNCWEBSERVER_RX_TIMEOUT 10
+#endif
+
 bool ON_STA_FILTER(AsyncWebServerRequest *request) {
   return WiFi.localIP() == request->client()->localIP();
 }
@@ -41,7 +45,7 @@ AsyncWebServer::AsyncWebServer(uint16_t port)
   _server.onClient([](void *s, AsyncClient* c){
     if(c == NULL)
       return;
-    c->setRxTimeout(3);
+    c->setRxTimeout(ASYNCWEBSERVER_RX_TIMEOUT);
     AsyncWebServerRequest *r = new AsyncWebServerRequest((AsyncWebServer*)s, c);
     if(r == NULL){
       c->close(true);

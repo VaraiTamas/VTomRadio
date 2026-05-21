@@ -108,7 +108,7 @@ bool loadFonts() {
                     font_vlw_20 && font_vlw_22 && font_vlw_24 && font_vlw_26 && font_vlw_36;
     bool optional = (font_vlw_clock_digi && font_vlw_clock_sec_digi) || (font_vlw_clock_calibri && font_vlw_clock_sec_calibri);
 
-    if (!optional) Serial.println("[FONT] Optionalis fontok nem teljesen betoltve – ora alap GFX fontot hasznal.");
+    if (!optional) Serial.println("[FONT] Optional fonts not fully loaded – now uses default GFX fonts.");
     return required;
 }
 
