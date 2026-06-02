@@ -6,7 +6,7 @@
 #include "../../core/fonts.h"
 
 #ifndef CLOCK_WIDGET_SEC_DEBUG
-#define CLOCK_WIDGET_SEC_DEBUG 0
+#    define CLOCK_WIDGET_SEC_DEBUG 0
 #endif
 
 void ClockWidget::init(WidgetConfig clockConf, uint16_t fgcolor, uint16_t bgcolor) {
@@ -109,20 +109,16 @@ void ClockWidget::_calcSize() {
 }
 
 bool ClockWidget::_syncLayoutIfNeeded(bool forceRedraw) {
-    const bool fontOrModeChanged = (_lastMainFont != font_vlw_clock) || (_lastSecFont != font_vlw_clock_sec) || (_lastClockFontStyle != config.store.clockFontStyle) ||
-                                   (_lastClockAmPmStyle != config.store.clockAmPmStyle);
+    const bool fontOrModeChanged =
+        (_lastMainFont != font_vlw_clock) || (_lastSecFont != font_vlw_clock_sec) || (_lastClockFontStyle != config.store.clockFontStyle) || (_lastClockAmPmStyle != config.store.clockAmPmStyle);
     const bool missingSprite = !_spr || !_spr->getBuffer();
 
-    if (!forceRedraw && !fontOrModeChanged && !missingSprite) {
-        return false;
-    }
+    if (!forceRedraw && !fontOrModeChanged && !missingSprite) { return false; }
 
     _calcSize();
     _getTimeBounds();
 
-    if (!_spr) {
-        _spr = new LGFX_Sprite(&dsp);
-    }
+    if (!_spr) { _spr = new LGFX_Sprite(&dsp); }
     _spr->setColorDepth(16);
     _spr->setPsram(true);
 
@@ -136,9 +132,7 @@ bool ClockWidget::_syncLayoutIfNeeded(bool forceRedraw) {
     _spr->setTextDatum(lgfx::top_left);
 
     // Date sprite height depends on active fonts, so drop cached buffer after style switches.
-    if (_dateSpr && _dateSpr->getBuffer()) {
-        _dateSpr->deleteSprite();
-    }
+    if (_dateSpr && _dateSpr->getBuffer()) { _dateSpr->deleteSprite(); }
 
     _lastMainFont = font_vlw_clock;
     _lastSecFont = font_vlw_clock_sec;
@@ -156,11 +150,11 @@ void ClockWidget::_captureTimeSnapshot() {
 bool ClockWidget::_getTime() {
     if (config.store.clockAmPmStyle) {
         strftime(_timebuffer, sizeof(_timebuffer), "%I:%M", &_drawTimeinfo);
-        if (_timebuffer[0] == '0') {
-            _timebuffer[0] = ' '; // Ha az eslő számjegy 0 kicseréli szóközre (azonos karakterszélesség szükséges)
-        }
     } else {
         strftime(_timebuffer, sizeof(_timebuffer), "%H:%M", &_drawTimeinfo);
+    }
+    if (_timebuffer[0] == '0') {
+        _timebuffer[0] = ' '; // Ha az első számjegy 0, szóközre cseréljük (azonos karakterszélességhez)
     }
     const bool hasValidTime = _drawTimeinfo.tm_year > 100;
     const bool timeChanged = (_lastRenderedHour != _drawTimeinfo.tm_hour) || (_lastRenderedMinute != _drawTimeinfo.tm_min);
@@ -227,6 +221,8 @@ void ClockWidget::_drawShortDateSSD1322() {
 void ClockWidget::_printClock(bool redraw) {
     if (!_spr || !_spr->getBuffer()) return;
 
+    constexpr uint16_t dividerWidth = 5;
+
     auto applyMainClockFont = [this]() {
         if (font_vlw_clock) {
             _spr->loadFont(font_vlw_clock);
@@ -286,7 +282,7 @@ void ClockWidget::_printClock(bool redraw) {
         if (timeX < 0) timeX = 0;
 
         // --- pontos ':' pozíció számítás a ténylegesen kirajzolt időből ---
-        char hourPart[3] = { _timebuffer[0], _timebuffer[1], '\0' };
+        char hourPart[3] = {_timebuffer[0], _timebuffer[1], '\0'};
         _dotsleft = timeX + _spr->textWidth(hourPart);
         _dotswidth = _spr->textWidth(":");
 
@@ -324,8 +320,9 @@ void ClockWidget::_printClock(bool redraw) {
             applyAmPmFont();
             const uint16_t ampmW = _spr->textWidth(buf);
             const uint16_t ampmH = _spr->fontHeight();
-            int16_t ampmX = _linesleft + ((int16_t)rightBlockWidth - (int16_t)ampmW) / 2;
-            int16_t ampmY = (int16_t)(splitY + 1) + ((int16_t)_timeheight - (int16_t)(splitY + 1) - (int16_t)ampmH) / 2;
+            const uint16_t contentWidth = (rightBlockWidth > dividerWidth) ? (rightBlockWidth - dividerWidth) : 0;
+            int16_t        ampmX = _linesleft + dividerWidth + ((int16_t)contentWidth - (int16_t)ampmW) / 2;
+            int16_t        ampmY = (int16_t)(splitY + 1) + ((int16_t)_timeheight - (int16_t)(splitY + 1) - (int16_t)ampmH) / 2;
             if (ampmY < (int16_t)(splitY + 1)) ampmY = splitY + 1;
 
             _spr->setTextColor(config.theme.seconds, config.theme.background);
@@ -399,8 +396,8 @@ void ClockWidget::_printClock(bool redraw) {
     if (!redraw && _lastRenderedSecond == currentSecond && _lastRenderedDots == showDots) {
 #if CLOCK_WIDGET_SEC_DEBUG
         if (_drawTimeinfo.tm_year > 100) {
-            Serial.printf("[CLK SKIP] ms=%lu snap=%02d:%02d:%02d last=%d dots=%d redraw=%d\n", millis(), _drawTimeinfo.tm_hour, _drawTimeinfo.tm_min, _drawTimeinfo.tm_sec,
-                          _lastRenderedSecond, (int)_lastRenderedDots, (int)redraw);
+            Serial.printf("[CLK SKIP] ms=%lu snap=%02d:%02d:%02d last=%d dots=%d redraw=%d\n", millis(), _drawTimeinfo.tm_hour, _drawTimeinfo.tm_min, _drawTimeinfo.tm_sec, _lastRenderedSecond,
+                          (int)_lastRenderedDots, (int)redraw);
         }
 #endif
         return;
@@ -410,16 +407,17 @@ void ClockWidget::_printClock(bool redraw) {
 
     sprintf(_tmp, "%02d", currentSecond);
     const uint16_t secW = _spr->textWidth(_tmp);
-    uint16_t       secH = _spr->fontHeight();
+    Serial.printf("secW=%d\n", secW);
+    uint16_t secH = _spr->fontHeight();
 
     uint16_t leftSec;
     uint16_t secTop = _secTopSpace;
+    if (!rightBlockWidth) { rightBlockWidth = _clockwidth - _linesleft; }
+    const uint16_t secContentWidth = (rightBlockWidth > dividerWidth) ? (rightBlockWidth - dividerWidth) : 0;
+    leftSec = _linesleft + dividerWidth + ((int16_t)secContentWidth - (int16_t)secW) / 2;
 
     if (config.store.clockAmPmStyle) {
         const uint16_t splitY = getAmPmSplitY();
-        if (!rightBlockWidth) { rightBlockWidth = _clockwidth - _linesleft; }
-        leftSec = _linesleft + ((int16_t)rightBlockWidth - (int16_t)secW) / 2;
-        leftSec += 2;
         secTop = ((int16_t)splitY - (int16_t)secH) / 2;
         if ((int16_t)secTop < 0) secTop = 0;
     } else {
@@ -428,7 +426,6 @@ void ClockWidget::_printClock(bool redraw) {
 #else
         secTop = _secTopSpace;
 #endif
-        leftSec = _linesleft + 3;
     }
 
     int16_t  secClearX = _linesleft + 1;
@@ -483,8 +480,8 @@ void ClockWidget::_printClock(bool redraw) {
 #if CLOCK_WIDGET_SEC_DEBUG
     tm netDbg{};
     network_get_timeinfo_snapshot(&netDbg);
-    Serial.printf("[CLK DRAW] ms=%lu snap=%02d:%02d:%02d net=%02d:%02d:%02d redraw=%d\n", millis(), _drawTimeinfo.tm_hour, _drawTimeinfo.tm_min, _drawTimeinfo.tm_sec, netDbg.tm_hour,
-                  netDbg.tm_min, netDbg.tm_sec, (int)redraw);
+    Serial.printf("[CLK DRAW] ms=%lu snap=%02d:%02d:%02d net=%02d:%02d:%02d redraw=%d\n", millis(), _drawTimeinfo.tm_hour, _drawTimeinfo.tm_min, _drawTimeinfo.tm_sec, netDbg.tm_hour, netDbg.tm_min,
+                  netDbg.tm_sec, (int)redraw);
 #endif
 }
 
@@ -492,29 +489,33 @@ void ClockWidget::_formatDate() {
 #if defined(DSP_OLED) && (DSP_MODEL == DSP_SSD1322)
     // ===== SSD1322: rövid numerikus dátum, futásidőben kiválasztható formátum =====
     switch (config.store.dateFormat) {
-        case 0:  snprintf(_tmp, sizeof(_tmp), "%04d.%02d.%02d", _drawTimeinfo.tm_year + 1900, _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_mday); break; // HU: YYYY.MM.DD
-        case 1:  snprintf(_tmp, sizeof(_tmp), "%02d/%02d/%04d", _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_mday, _drawTimeinfo.tm_year + 1900); break;   // EN: MM/DD/YYYY
-        case 2:  snprintf(_tmp, sizeof(_tmp), "%02d-%02d-%04d", _drawTimeinfo.tm_mday, _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_year + 1900); break;   // NL: DD-MM-YYYY
-        case 3:  snprintf(_tmp, sizeof(_tmp), "%02d.%02d.%04d", _drawTimeinfo.tm_mday, _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_year + 1900); break;   // PL/DE: DD.MM.YYYY
-        case 4:  snprintf(_tmp, sizeof(_tmp), "%02d/%02d/%04d", _drawTimeinfo.tm_mday, _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_year + 1900); break;   // ES/GR: DD/MM/YYYY
-        default: snprintf(_tmp, sizeof(_tmp), "%04d-%02d-%02d", _drawTimeinfo.tm_year + 1900, _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_mday); break;   // ISO fallback
+        case 0: snprintf(_tmp, sizeof(_tmp), "%04d.%02d.%02d", _drawTimeinfo.tm_year + 1900, _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_mday); break;  // HU: YYYY.MM.DD
+        case 1: snprintf(_tmp, sizeof(_tmp), "%02d/%02d/%04d", _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_mday, _drawTimeinfo.tm_year + 1900); break;  // EN: MM/DD/YYYY
+        case 2: snprintf(_tmp, sizeof(_tmp), "%02d-%02d-%04d", _drawTimeinfo.tm_mday, _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_year + 1900); break;  // NL: DD-MM-YYYY
+        case 3: snprintf(_tmp, sizeof(_tmp), "%02d.%02d.%04d", _drawTimeinfo.tm_mday, _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_year + 1900); break;  // PL/DE: DD.MM.YYYY
+        case 4: snprintf(_tmp, sizeof(_tmp), "%02d/%02d/%04d", _drawTimeinfo.tm_mday, _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_year + 1900); break;  // ES/GR: DD/MM/YYYY
+        default: snprintf(_tmp, sizeof(_tmp), "%04d-%02d-%02d", _drawTimeinfo.tm_year + 1900, _drawTimeinfo.tm_mon + 1, _drawTimeinfo.tm_mday); break; // ISO fallback
     }
     return;
 #else
     // ===== MINDEN MÁS KIJELZŐ: hosszú, szöveges forma, futásidőben kiválasztható =====
     switch (config.store.dateFormat) {
-        case 0:  sprintf(_tmp, "%d. %s %2d. %s",   _drawTimeinfo.tm_year + 1900, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_mday, LANG::dowf[_drawTimeinfo.tm_wday]); break; // HU: YYYY. MMM DD. DOW
-        case 1:  sprintf(_tmp, "%2d %s %d",         _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break;                                       // EN/RU: DD MMM YYYY
-        case 2:  sprintf(_tmp, "%s %2d %s %d",      LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // NL: DOW DD MMM YYYY
-        case 3:  sprintf(_tmp, "%s - %02d. %s. %04d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // PL: DOW - DD MMM YYYY
-        default: sprintf(_tmp, "%s - %02d. %s. %d",   LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // DE/SK/UA/ES/GR: DOW, DD. MMM YYYY
+        case 0:
+            sprintf(_tmp, "%d. %s %2d. %s", _drawTimeinfo.tm_year + 1900, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_mday, LANG::dowf[_drawTimeinfo.tm_wday]);
+            break;                                                                                                                         // HU: YYYY. MMM DD. DOW
+        case 1: sprintf(_tmp, "%2d %s %d", _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // EN/RU: DD MMM YYYY
+        case 2: sprintf(_tmp, "%s %2d %s %d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // NL: DOW DD MMM YYYY
+        case 3:
+            sprintf(_tmp, "%s - %02d. %s. %04d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900);
+            break; // PL: DOW - DD MMM YYYY
+        default:
+            sprintf(_tmp, "%s - %02d. %s. %d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900);
+            break; // DE/SK/UA/ES/GR: DOW, DD. MMM YYYY
     }
 #endif
 }
 void ClockWidget::_clearClock() {
-    if (_spr && _spr->getBuffer()) {
-        _spr->fillSprite(config.theme.background);
-    }
+    if (_spr && _spr->getBuffer()) { _spr->fillSprite(config.theme.background); }
 }
 
 void ClockWidget::draw(bool redraw) {

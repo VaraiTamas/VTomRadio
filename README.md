@@ -111,6 +111,8 @@ A névnapok megjelenítése a WEB-es felületen kikapcsolható options/ SYSTEM->
    - 3D nyomtatási terv --> https://www.printables.com/model/1621877-yoradio-case-for-ips-ctp-35-inch-spi-red-ili9488-f
 
 ## Version history: 
+### v0.1.3
+- Az óra megjelenítésénén egy számjegy esetén ne jelenjen meg előtte a nulla javítás és a másodperc középreigazítása minden fontnál.
 ### v0.1.2
 - SD kártya módban a képernyő fagyás hibájának javítása. Mostantól a myoptions.h fájlban az SD modot így kell beállítani.
 ```
