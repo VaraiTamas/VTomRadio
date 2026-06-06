@@ -111,6 +111,8 @@ A névnapok megjelenítése a WEB-es felületen kikapcsolható options/ SYSTEM->
    - 3D nyomtatási terv --> https://www.printables.com/model/1621877-yoradio-case-for-ips-ctp-35-inch-spi-red-ili9488-f
 
 ## Version history: 
+### Ha támogatni szeretnéd a munkámat itt meghívhatsz egy kávéra!!!     
+https://buymeacoffee.com/vtom
 ## v0.1.5
 - ILI9341 kijelző támogatás hozzáadása. Ez a kijelző 320x240 felbontású, így a megjelenítés kissé módosult, de a program többi része változatlan maradt. (by Scott Barber)
 ### v0.1.4
