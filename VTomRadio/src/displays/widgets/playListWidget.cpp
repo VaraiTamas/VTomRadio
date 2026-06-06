@@ -14,10 +14,24 @@ PlayListWidget::PlayListWidget() : Widget() {
 // Destruktor
 PlayListWidget::~PlayListWidget() {}
 
+uint16_t PlayListWidget::currentTop() {
+    return (dsp.height() / 2) - (_plItemHeight / 2);
+}
+
 void PlayListWidget::_loadDspFont() {
     dsp.unloadFont();
     uint8_t sz = playlistConf.widget.textsize;
-    if (sz == 20 && font_vlw_20)
+    if (sz == 9 && font_vlw_9)
+        dsp.loadFont(font_vlw_9);
+    else if (sz == 12 && font_vlw_12)
+        dsp.loadFont(font_vlw_12);
+    else if (sz == 14 && font_vlw_14)
+        dsp.loadFont(font_vlw_14);
+    else if (sz == 16 && font_vlw_16)
+        dsp.loadFont(font_vlw_16);
+    else if (sz == 18 && font_vlw_18)
+        dsp.loadFont(font_vlw_18);
+    else if (sz == 20 && font_vlw_20)
         dsp.loadFont(font_vlw_20);
     else if (sz == 22 && font_vlw_22)
         dsp.loadFont(font_vlw_22);

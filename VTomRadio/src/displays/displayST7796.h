@@ -25,8 +25,8 @@ class LGFX_ST7796 : public LGFX_Base<lgfx::Panel_ST7796> {
 typedef LGFX_ST7796 yoDisplay;
 typedef lgfx::LGFX_Sprite Canvas;
 
+#define LOGO_PATH "/images/logo300x118.png"
 #include "tools/commongfx.h"
-
 #include "conf/conf_480x320.h"
 
 #define ST7796_SLPIN   0x10

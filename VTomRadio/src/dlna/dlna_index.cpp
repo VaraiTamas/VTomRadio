@@ -240,8 +240,8 @@ bool DlnaIndex::listContainer(const String& controlUrl, const String& objectId, 
   String didl;
   uint32_t ret = 0, tot = 0;
 
-  // 200 elég a UI-hoz, indexeléshez majd külön autoBuildPlaylist lapoz
-  const uint32_t pageSize = 200;
+  // Kisebb lapméret: alacsonyabb memória és hálózati terhelés a böngészésnél.
+  const uint32_t pageSize = 80;
   if (!browsePage(controlUrl, objectId, start, pageSize, didl, ret, tot)) return false;
 
   std::vector<String> cids, ctitles;

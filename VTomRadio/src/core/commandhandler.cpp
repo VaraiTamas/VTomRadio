@@ -84,7 +84,21 @@ bool CommandHandler::exec(const char* command, const char* value, uint8_t cid) {
         int id = atoi(value);
         if (id < 1) { id = 1; }
         uint16_t cs = config.playlistLength();
-        if (id > cs) { id = cs; }
+
+#ifdef USE_DLNA
+        // DLNA index can be missing right after (re)build or source switch.
+        if (cs == 0 && config.getMode() == PM_WEB && config.store.playlistSource == PL_SRC_DLNA) {
+            config.initDLNAPlaylist();
+            cs = config.playlistLength();
+        }
+#endif
+
+        if (cs == 0) {
+            Serial.println("[PLAY] playlist index empty, ignoring play request");
+            return false;
+        }
+
+        if (id > (int)cs) { id = cs; }
         player.sendCommand({PR_PLAY, id});
         return true;
     }

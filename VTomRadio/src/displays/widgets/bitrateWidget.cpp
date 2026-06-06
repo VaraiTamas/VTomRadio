@@ -52,12 +52,23 @@ void BitrateWidget::_ensureSprite() {
 
 bool BitrateWidget::_applyFont() {
     _usingVlw = false;
-
-    if (_box.textsize == 20 && font_vlw_20) {
+    if (_box.textsize == 12 && font_vlw_12) {
+        _spr->loadFont(font_vlw_12);
+        _spr->setTextSize(1);
+        _usingVlw = true;
+    } else if (_box.textsize == 14 && font_vlw_14) {
+        _spr->loadFont(font_vlw_14);
+        _spr->setTextSize(1);
+        _usingVlw = true;
+    } else if (_box.textsize == 16 && font_vlw_16) {
+        _spr->loadFont(font_vlw_16);
+        _spr->setTextSize(1);
+        _usingVlw = true;
+    } else if (_box.textsize == 20 && font_vlw_20) {
         _spr->loadFont(font_vlw_20);
         _spr->setTextSize(1);
-        _usingVlw = true;    
-    }else if(_box.textsize == 22 && font_vlw_22) {
+        _usingVlw = true;
+    } else if (_box.textsize == 22 && font_vlw_22) {
         _spr->loadFont(font_vlw_22);
         _spr->setTextSize(1);
         _usingVlw = true;
@@ -92,7 +103,7 @@ void BitrateWidget::_draw() {
 
     if (_format == BF_UNKNOWN || _bitrate == 0) {
         _clear();
-       // return;
+        // return;
     }
 
     _ensureSprite(); // Sprite létrehozása vagy újraméretezése, ha szükséges
@@ -132,8 +143,8 @@ void BitrateWidget::_draw() {
     // =====================
 
     if (_bitrate == 0) {
-        snprintf(_buf, sizeof(_buf), "---");    
-    } else if (_bitrate > 0 && _bitrate < 999) {     
+        snprintf(_buf, sizeof(_buf), "---");
+    } else if (_bitrate > 0 && _bitrate < 999) {
         snprintf(_buf, sizeof(_buf), "%d", _bitrate);
     } else {
         float br = (float)_bitrate / 1000;
@@ -153,10 +164,10 @@ void BitrateWidget::_draw() {
     }
 
     _spr->setTextDatum(middle_center);
-  
+
     /****** ELRENDEZÉS ******/
     if (!flat) {
-        // 🔲 
+        // 🔲
         // Ha nem flat, akkor négyzetes elrendezés: bitrate fent, formátum lent
         _spr->setTextColor(_fgcolor, _bgcolor);
         _spr->drawString(_buf, w / 2, h / 4);
@@ -243,7 +254,7 @@ void BitrateWidget::_clear() {
 
 /* Törli mindkét bitratewidget területét és a namedayt is */
 void BitrateWidget::clearAll() {
-    dsp.fillRect(_config.left, _config.top, _box.dimension * 2, _box.dimension, config.theme.background);  // _bgcolor zöld próba 0xAEE5  
+    dsp.fillRect(_config.left, _config.top, _box.dimension * 2, _box.dimension, config.theme.background); // _bgcolor zöld próba 0xAEE5
 }
 
 void BitrateWidget::refresh() {

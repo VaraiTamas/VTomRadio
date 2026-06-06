@@ -2,6 +2,13 @@
 
 #include <LovyanGFX.hpp>
 
+// Default panel invert = true (required by ILI9488/ST7796).
+// Override to false in the display header before including this file
+// for panels that do not need hardware-level colour inversion (e.g. ILI9341).
+#ifndef LGFX_PANEL_INVERT
+#  define LGFX_PANEL_INVERT true
+#endif
+
 #include "../../core/options.h"
 
 #if TS_MODEL == TS_MODEL_AXS15231B
@@ -53,7 +60,7 @@ class LGFX_Base : public lgfx::LGFX_Device {
     cfg.panel_width = _panelWidth;
     cfg.panel_height = _panelHeight;
     cfg.offset_rotation = _rotationOffset;
-    cfg.invert = true;
+    cfg.invert = LGFX_PANEL_INVERT;  // ILI9341: false (set in displayILI9341.h); ILI9488 and others: true (default below)
     _panel.config(cfg);
   }
 
@@ -62,6 +69,8 @@ class LGFX_Base : public lgfx::LGFX_Device {
     auto cfg = _touch.config();
 
 #if TS_MODEL == TS_MODEL_XPT2046
+    cfg.pin_sclk = 12;
+    cfg.pin_mosi = 11;
     cfg.pin_miso = 13;
     cfg.pin_cs = TS_CS;
     cfg.bus_shared = true;

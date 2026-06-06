@@ -11,8 +11,22 @@
 #    include "../pluginsManager/pluginsManager.h"
 #    include "../plugins/backlight/backlight.h"
 
-#    ifndef TS_STEPS
-#        define TS_STEPS 40
+#    ifndef TS_STEPS_X
+#        ifdef TS_STEPS
+#            define TS_STEPS_X TS_STEPS
+#        else
+#            define TS_STEPS_X 40
+#        endif
+#    endif
+
+#    ifndef TS_STEPS_Y
+#        ifdef TS_STEPS
+#            define TS_STEPS_Y TS_STEPS
+#        elif (DSP_HEIGHT <= 320)
+#            define TS_STEPS_Y 24
+#        else
+#            define TS_STEPS_Y 40
+#        endif
 #    endif
 
 void TouchScreen::init(uint16_t w, uint16_t h) {
@@ -46,9 +60,9 @@ void TouchScreen::loop() {
     static int      presetHoldSlot = -1;
     static int      favHold = -1;
     static bool     favLongTriggered = false;
-    static uint32_t lastTouchMs = 0;
 #    endif
-    static bool lastStTouched = false;
+    static uint32_t lastTouchMs = 0;
+    static bool     lastStTouched = false;
 
     if (!_checklpdelay(20, _touchdelay)) { return; }
 
@@ -59,18 +73,12 @@ void TouchScreen::loop() {
     // CSAK AKKOR frissítsük a touchX/Y-t, ha tényleg érintés van!
     // Ha istouched hamis, akkor a touchX/Y maradjon az előző érvényes érték.
     if (istouched) {
-        if(config.store.dbgtouch) {
-            Serial.printf("[TOUCH] raw x=%d y=%d  screen=%dx%d\n", x, y, _width, _height);
-        }
+        if (config.store.dbgtouch) { Serial.printf("[TOUCH] raw x=%d y=%d  screen=%dx%d\n", x, y, _width, _height); }
         touchX = x;
         touchY = y;
 
-        if (config.store.xTouchMirroring) {
-            touchX = _width - 1 - touchX;
-        }
-        if (config.store.yTouchMirroring) {
-            touchY = _height - 1 - touchY;
-        }
+        if (config.store.xTouchMirroring) { touchX = _width - 1 - touchX; }
+        if (config.store.yTouchMirroring) { touchY = _height - 1 - touchY; }
 
         lastTouchMs = millis();
     }
@@ -133,10 +141,10 @@ void TouchScreen::loop() {
                     } else {
                         direct = _tsDirection(touchX, touchY);
                     }
-                  //  Serial.printf("_oldTouchX: %d, _oldTouchY: %d\n", _oldTouchX, _oldTouchY); // Debug: érintés kezdete
-                  //  Serial.printf("touchX: %d, touchY: %d\n", touchX, touchY);                 // Debug: aktuális érintési koordináták
-                  //  Serial.printf("Touch hold: distX=%d, distY=%d\n", distX, distY);         // Debug: távolságok kiírása
-                  //  Serial.printf("Determined direction: %d\n\n", direct);                         // Debug: meghatározott irány kiírása
+                      Serial.printf("_oldTouchX: %d, _oldTouchY: %d\n", _oldTouchX, _oldTouchY); // Debug: érintés kezdete
+                      Serial.printf("touchX: %d, touchY: %d\n", touchX, touchY);                 // Debug: aktuális érintési koordináták
+                      Serial.printf("Touch hold: distX=%d, distY=%d\n", distX, distY);         // Debug: távolságok kiírása
+                      Serial.printf("Determined direction: %d\n\n", direct);                         // Debug: meghatározott irány kiírása
                     switch (direct) {
                         case TSD_LEFT:
                         case TSD_RIGHT: {
@@ -144,7 +152,7 @@ void TouchScreen::loop() {
                             touchLongPress = millis() - 5000;
 
                             if (display.mode() == PLAYER || display.mode() == VOL) {
-                                int16_t xDelta = map(abs(touchVol - touchX), 0, _width, 0, TS_STEPS);
+                                int16_t xDelta = map(abs(touchVol - touchX), 0, _width, 0, TS_STEPS_X);
                                 if (xDelta >= 1) {
                                     display.putRequest(NEWMODE, VOL);
                                     controlsEvent((touchVol - touchX) < 0);
@@ -157,7 +165,7 @@ void TouchScreen::loop() {
                         case TSD_DOWN: {
                             touchLongPress = millis() - 5000;
                             if (display.mode() == PLAYER || display.mode() == STATIONS) {
-                                int16_t yDelta = map(abs(touchStation - touchY), 0, _height, 0, TS_STEPS);
+                                int16_t yDelta = map(abs(touchStation - touchY), 0, _height, 0, TS_STEPS_Y);
                                 if (yDelta >= 1) {
                                     display.putRequest(NEWMODE, STATIONS);
                                     controlsEvent((touchStation - touchY) < 0);
@@ -255,13 +263,9 @@ void TouchScreen::loop() {
                     bool consumedByPlugin = false;
                     // Kompatibilitás: a backlight ébresztés maradjon elsődleges, mint a régi működésben.
 #    if (BRIGHTNESS_PIN != 255)
-                    if (config.store.fadeEnabled && backlightPlugin.isFadeControl()) {
-                        consumedByPlugin = true;
-                    }
+                    if (config.store.fadeEnabled && backlightPlugin.isFadeControl()) { consumedByPlugin = true; }
 #    endif
-                    if (!consumedByPlugin) {
-                        pm.on_user_activity(consumedByPlugin);
-                    }
+                    if (!consumedByPlugin) { pm.on_user_activity(consumedByPlugin); }
                     if (consumedByPlugin) {
                         // Csak a fény jön vissza, a zene nem áll meg
                     } else {
@@ -269,9 +273,8 @@ void TouchScreen::loop() {
                     }
                 }
             }
-
-        finish_touch:
 #    if (DSP_WIDTH == 480) && (DSP_HEIGHT == 320)
+        finish_touch:
             presetHoldSlot = -1;
             presetActionDone = 0;
 #    endif

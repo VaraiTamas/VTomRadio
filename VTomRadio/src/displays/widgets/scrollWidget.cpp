@@ -53,7 +53,14 @@ void ScrollWidget::_setTextParams() {
     _spr->setTextColor(_fgcolor, _bgcolor);
     _spr->setTextWrap(false);
     _spr->unloadFont();
-    if (_config.textsize == 20 && font_vlw_20) {
+    if (_config.textsize == 16 && font_vlw_16) {
+        _spr->loadFont(font_vlw_16);
+        _spr->setTextSize(1);
+    } else if (_config.textsize == 18 && font_vlw_18) {
+        _spr->loadFont(font_vlw_18);
+        _spr->setTextSize(1);
+
+    } else if (_config.textsize == 20 && font_vlw_20) {
         _spr->loadFont(font_vlw_20);
         _spr->setTextSize(1);
 

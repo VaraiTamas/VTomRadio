@@ -111,6 +111,8 @@ A névnapok megjelenítése a WEB-es felületen kikapcsolható options/ SYSTEM->
    - 3D nyomtatási terv --> https://www.printables.com/model/1621877-yoradio-case-for-ips-ctp-35-inch-spi-red-ili9488-f
 
 ## Version history: 
+## v0.1.5
+- ILI9341 kijelző támogatás hozzáadása. Ez a kijelző 320x240 felbontású, így a megjelenítés kissé módosult, de a program többi része változatlan maradt. (by Scott Barber)
 ### v0.1.4
 - A hangerő 0 - 21 értékeinek személyreszabása érdekében bevezetésre került a VOLUME CURVE, amely lehtővé teszi minden hangerő állás személyreszabását -60 - 0 dB értékek között. A VOLUME CURVE beállítása a WEB UI-ban a hangszínszabályzó lenyitásánál a VOLUME CURVE... gombbal indítható. 
 Teljes FLASH memória törlése és a data/ mappa feltöltése szükséges!!

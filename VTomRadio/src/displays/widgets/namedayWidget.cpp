@@ -51,9 +51,15 @@ void NamedayWidget::_ensureSprite() {
 bool NamedayWidget::_applyFont(uint8_t size) {
     uint8_t* f = nullptr;
 
-    if (size == 18)
+    if (size == 12 && font_vlw_12)
+        f = font_vlw_12;
+    else if (size == 14 && font_vlw_14)
+        f = font_vlw_14;
+    else if (size == 16 && font_vlw_16)
+        f = font_vlw_16;
+    else if (size == 18 && font_vlw_18)
         f = font_vlw_18;
-    else if (size == 20)
+    else if (size == 20 && font_vlw_20)
         f = font_vlw_20;
 
     if (f) {
@@ -92,19 +98,26 @@ void NamedayWidget::_printNameday(bool force) {
     if (!_spr || !_spr->getBuffer()) return;
 
     _spr->fillSprite(config.theme.background);
-    // --- LABEL (font size 18) ---
+
+
+    // --- LABEL textsize1 ---
     _applyFont(_namedayConf.textsize1);
+    uint16_t labelHeight = _spr->fontHeight();
+    if (!labelHeight) labelHeight = CHARHEIGHT * 2;
 
     _spr->setTextColor(config.theme.nameday_label, config.theme.background);
     _spr->setCursor(0, 0);
     _spr->print(nameday_label);
 
-    // --- NAME (font size 20) ---
+    // --- NAME (textsize2) ---
     _applyFont(_namedayConf.textsize2);
+    uint16_t nameHeight = _spr->fontHeight();
+    if (!nameHeight) nameHeight = CHARHEIGHT * 2;
 
     _spr->setTextColor(config.theme.nameday, config.theme.background);
 
-    int16_t y = 22; // egyszerű fix offset (később finomítható)
+    int16_t y = static_cast<int16_t>(labelHeight);
+    if (y < 0) y = 0;
 
     _spr->setCursor(0, y);
     _spr->print(_namedayBuf);

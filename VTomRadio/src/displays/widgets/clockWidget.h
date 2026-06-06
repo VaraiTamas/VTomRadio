@@ -28,8 +28,8 @@ class ClockWidget : public Widget {
 
   protected:
     char     _timebuffer[20] = "00:00";
-    char     _tmp[38], _datebuf[38];
-    uint16_t _clockleft, _clockwidth, _timewidth, _dotsleft, _dotswidth, _linesleft;
+    char     _tmp[40], _datebuf[40];
+    uint16_t _clockleft, _clockwidth, _timewidth, _dotsleft, _dotswidth, _linesleft, _datewidth;
     uint8_t  _clockheight, _timeheight, _dateheight, _space;
     uint16_t _forceflag = 0;
     uint16_t _secHeight, _secTopSpace;

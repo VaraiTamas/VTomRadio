@@ -19,7 +19,7 @@ class PlayListWidget : public Widget {
     void     init(ScrollWidget* current);
     void     drawPlaylist(uint16_t currentItem);
     uint16_t itemHeight() { return _plItemHeight; }
-    uint16_t currentTop() { return (dsp.height() / 2) - (_plItemHeight / 2); }
+    uint16_t currentTop();
 
   private:
     ScrollWidget* _currentScroll = nullptr;

@@ -25,12 +25,12 @@
 
 /*----- CLOCK, DATE -----*/
 #define COLOR_CLOCK             255, 255, 255 
-#define COLOR_CLOCK_BG           28,  28,  28
+#define COLOR_CLOCK_BG            5,   5,   5
 #define COLOR_SECONDS           255, 255, 255 
 #define COLOR_DIVIDER           165, 162, 132
 #define COLOR_DATE              255, 255, 255
 
-/*----- VU WIDGET ----*/
+/*----- VU WIDGET -----*/
 #define COLOR_VU_MAX            255,  14,  14
 #define COLOR_VU_MID            255, 255,   0
 #define COLOR_VU_MIN             44, 212,  32

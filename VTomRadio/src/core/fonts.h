@@ -19,8 +19,10 @@ TTF font to VLW konvertálás: https://vlw-font-creator.m5stack.com/
 #include <LovyanGFX.hpp>
 
 // ================= VLW FONTOK =================
+extern uint8_t* font_vlw_8;
 extern uint8_t* font_vlw_9;
 extern uint8_t* font_vlw_12;
+extern uint8_t* font_vlw_14;
 extern uint8_t* font_vlw_16;
 extern uint8_t* font_vlw_18;
 extern uint8_t* font_vlw_20;

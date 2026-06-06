@@ -17,6 +17,8 @@
 #ifdef USE_DLNA  //DLNA mod
   #include "../dlna/dlna_index.h"
   #include "../dlna/dlna_service.h"
+
+static SemaphoreHandle_t g_dlnaListRouteMux = nullptr;
 #endif
 
 #if DSP_MODEL == DSP_DUMMY
@@ -456,15 +458,31 @@ bool NetServer::begin(bool quiet) {
       return;
     }
 
+    if (!g_dlnaListRouteMux) {
+      g_dlnaListRouteMux = xSemaphoreCreateMutex();
+    }
+    if (!g_dlnaListRouteMux || xSemaphoreTake(g_dlnaListRouteMux, pdMS_TO_TICKS(250)) != pdTRUE) {
+      request->send(429, "application/json", "{\"ok\":false,\"error\":\"DLNA list busy\"}");
+      return;
+    }
+
+    if (dlna_isBusy()) {
+      xSemaphoreGive(g_dlnaListRouteMux);
+      request->send(429, "application/json", "{\"ok\":false,\"error\":\"DLNA worker busy\"}");
+      return;
+    }
+
     String objectId = request->getParam("objectId")->value();
     uint32_t start = request->hasParam("start") ? request->getParam("start")->value().toInt() : 0;
+    String controlUrl = g_dlnaControlUrl;
 
     String json;
 
     DlnaIndex idx;
-    bool ok = idx.listContainer(g_dlnaControlUrl, objectId, json, start);
+    bool ok = idx.listContainer(controlUrl, objectId, json, start);
 
     if (!ok) {
+      xSemaphoreGive(g_dlnaListRouteMux);
       request->send(500, "application/json", "{\"ok\":false,\"error\":\"Browse failed\"}");
       return;
     }
@@ -472,6 +490,7 @@ bool NetServer::begin(bool quiet) {
     AsyncWebServerResponse *r = request->beginResponse(200, "application/json", json);
     r->addHeader("Cache-Control", "no-store");
     request->send(r);
+    xSemaphoreGive(g_dlnaListRouteMux);
   });
 
   /* ================= DLNA BUILD ================= */

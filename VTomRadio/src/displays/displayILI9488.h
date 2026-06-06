@@ -25,8 +25,8 @@ class LGFX_ILI9488 : public LGFX_Base<lgfx::Panel_ILI9488> {
 typedef LGFX_ILI9488 yoDisplay;
 typedef lgfx::LGFX_Sprite Canvas;
 
+#define LOGO_PATH "/images/logo300x118.png"
 #include "tools/commongfx.h"
-
 #include "conf/conf_480x320.h"
 
 #define ILI9488_SLPIN   0x10

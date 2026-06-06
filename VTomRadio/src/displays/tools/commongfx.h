@@ -42,7 +42,7 @@ class DspCore : public yoDisplay { // yoDisplay: typedef LGFX yoDisplay
     inline void loop(bool force = false) {}
 
     inline void drawLogo(uint16_t top) {
-        File f = LittleFS.open("/images/logo300x118.png", "r");
+        File f = LittleFS.open(LOGO_PATH, "r");
         if (!f) return;
         size_t   size = f.size();
         uint8_t* buf = (uint8_t*)ps_malloc(size);

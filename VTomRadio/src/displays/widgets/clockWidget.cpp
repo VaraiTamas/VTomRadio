@@ -9,6 +9,46 @@
 #    define CLOCK_WIDGET_SEC_DEBUG 0
 #endif
 
+static uint8_t* getVlwFontBySize(uint8_t size) {
+    switch (size) {
+        case 9: return font_vlw_9;
+        case 12: return font_vlw_12;
+        case 14: return font_vlw_14;
+        case 16: return font_vlw_16;
+        case 18: return font_vlw_18;
+        case 20: return font_vlw_20;
+        case 22: return font_vlw_22;
+        case 24: return font_vlw_24;
+        case 26: return font_vlw_26;
+        case 36: return font_vlw_36;
+        default: return nullptr;
+    }
+}
+
+static void applyDateFontByConfig(LGFX_Sprite* spr, uint8_t textSize) {
+    if (!spr) return;
+
+    // 5-ös méretig klasszikus GFX fontot használunk.
+    if (textSize <= 5) {
+        spr->unloadFont();
+        spr->setFont(nullptr);
+        spr->setTextSize(textSize ? textSize : 1);
+        return;
+    }
+
+    // 5 fölött VLW-t próbálunk betölteni a konfigurált méret alapján.
+    if (uint8_t* vlw = getVlwFontBySize(textSize)) {
+        spr->loadFont(vlw);
+        spr->setTextSize(1);
+        return;
+    }
+
+    // Ha nincs megfelelő VLW, maradjon olvasható fallback GFX méret.
+    spr->unloadFont();
+    spr->setFont(nullptr);
+    spr->setTextSize(2);
+}
+
 void ClockWidget::init(WidgetConfig clockConf, uint16_t fgcolor, uint16_t bgcolor) {
 
     _clockConf = clockConf;
@@ -88,6 +128,16 @@ void ClockWidget::_calcSize() {
     uint16_t w_right = w_sec;
 
     if (config.store.clockAmPmStyle) {
+#if DSP_MODEL == DSP_ILI9341
+        if (font_vlw_14) {
+            _spr->loadFont(font_vlw_14);
+            _spr->setTextSize(1);
+        } else {
+            _spr->unloadFont();
+            _spr->setFont(nullptr);
+            _spr->setTextSize(1);
+        }
+#else
         if (font_vlw_22) {
             _spr->loadFont(font_vlw_22);
             _spr->setTextSize(1);
@@ -96,6 +146,7 @@ void ClockWidget::_calcSize() {
             _spr->setFont(nullptr);
             _spr->setTextSize(1);
         }
+#endif
 
         uint16_t w_ampm = _spr->textWidth("PM");
         if (w_ampm > w_right) { w_right = w_ampm; }
@@ -246,6 +297,16 @@ void ClockWidget::_printClock(bool redraw) {
     };
 
     auto applyAmPmFont = [this]() {
+#if DSP_MODEL == DSP_ILI9341
+        if (font_vlw_14) {
+            _spr->loadFont(font_vlw_14);
+            _spr->setTextSize(1);
+        } else {
+            _spr->unloadFont();
+            _spr->setFont(nullptr);
+            _spr->setTextSize(1);
+        }
+#else
         if (font_vlw_22) {
             _spr->loadFont(font_vlw_22);
             _spr->setTextSize(1);
@@ -254,6 +315,7 @@ void ClockWidget::_printClock(bool redraw) {
             _spr->setFont(nullptr);
             _spr->setTextSize(1);
         }
+#endif
     };
 
     auto getAmPmSplitY = [this]() -> uint16_t {
@@ -313,10 +375,8 @@ void ClockWidget::_printClock(bool redraw) {
         if (config.store.clockAmPmStyle) {
             const uint16_t splitY = getAmPmSplitY();
             _spr->drawFastHLine(_linesleft, splitY, rightBlockWidth, config.theme.div);
-
             char buf[3];
             strftime(buf, sizeof(buf), "%p", &_drawTimeinfo);
-
             applyAmPmFont();
             const uint16_t ampmW = _spr->textWidth(buf);
             const uint16_t ampmH = _spr->fontHeight();
@@ -324,17 +384,12 @@ void ClockWidget::_printClock(bool redraw) {
             int16_t        ampmX = _linesleft + dividerWidth + ((int16_t)contentWidth - (int16_t)ampmW) / 2;
             int16_t        ampmY = (int16_t)(splitY + 1) + ((int16_t)_timeheight - (int16_t)(splitY + 1) - (int16_t)ampmH) / 2;
             if (ampmY < (int16_t)(splitY + 1)) ampmY = splitY + 1;
-
             _spr->setTextColor(config.theme.seconds, config.theme.background);
             _spr->setCursor(ampmX, ampmY);
             _spr->print(buf);
         } else {
-#if DSP_MODEL == DSP_ILI9341
-            constexpr int lineOffset = 17;
-#else
-            constexpr int lineOffset = 5;
-#endif
-            _spr->drawFastHLine(_linesleft, _secTopSpace + _secHeight + lineOffset, _clockwidth - _linesleft, config.theme.div);
+            int16_t topcorrection = 5;
+            _spr->drawFastHLine(_linesleft, _secTopSpace + _secHeight + topcorrection, _clockwidth - _linesleft, config.theme.div);
         }
 
         // --------------------------------------------------------
@@ -352,37 +407,60 @@ void ClockWidget::_printClock(bool redraw) {
 
             memcpy_P(&_dateConf, &dateConf, sizeof(WidgetConfig));
 
-            // FONT kiválasztás
-            if (font_vlw_20) {
-                _dateSpr->loadFont(font_vlw_20);
-            } else {
-                _dateSpr->unloadFont();
-                _dateSpr->setFont(nullptr);
-                _dateSpr->setTextSize(2);
-            }
+            applyDateFontByConfig(_dateSpr, _dateConf.textsize);
 
             strlcpy(_datebuf, _tmp, sizeof(_datebuf));
 
-            uint16_t h = _dateSpr->fontHeight();
+            const uint16_t prevDateWidth = _datewidth;
+            const uint16_t prevDateHeight = _dateheight;
+            uint16_t       h = _dateSpr->fontHeight();
+            if (!h) {
+                const uint8_t gfxSize = (_dateConf.textsize <= 5 && _dateConf.textsize > 0) ? _dateConf.textsize : 1;
+                h = CHARHEIGHT * gfxSize;
+            }
+            uint16_t newDateWidth = _dateSpr->textWidth(_datebuf);
+            if (!newDateWidth) newDateWidth = 1;
 
-            // Sprite létrehozás / újraméretezés szélesség az idő szélessége, magasság a font magassága
-            if (!_dateSpr->getBuffer() || _dateSpr->width() != _clockwidth || _dateSpr->height() != h) {
+            // A sprite kapjon kis ráhagyást, mert a VLW/GFX mérés néha 1-2 pixellel alámér.
+            constexpr uint16_t dateSpritePad = 5;
+            const uint16_t     newDateSpriteWidth = newDateWidth + dateSpritePad;
+
+            // Sprite létrehozás / újraméretezés: a tényleges sprite legyen szélesebb a mért szövegnél.
+            if (!_dateSpr->getBuffer() || _dateSpr->width() != newDateSpriteWidth || _dateSpr->height() != h) {
 
                 if (_dateSpr->getBuffer()) _dateSpr->deleteSprite();
-                _dateSpr->createSprite(_clockwidth, h);
+                _dateSpr->createSprite(newDateSpriteWidth, h);
             }
+#    if DSP_MODEL == DSP_ILI9341
+            int xCorrection = -4; // ILI-nél a textWidth néha 1 pixelrel kevesebbet ad, mint amennyi hely kell a szövegnek, így +1 pixel ráhagyás.
+#    else
+            int xCorrection = 0;
+#    endif
 
             _dateSpr->fillSprite(config.theme.background);
-            _dateSpr->setTextDatum(lgfx::top_right); // A szöveg jobb felső sarka lesz az igazítási pont
+            _dateSpr->setTextDatum(lgfx::top_left);
             _dateSpr->setTextColor(config.theme.date, config.theme.background);
-            _dateSpr->drawString(_datebuf, _dateSpr->width(), 0);
+            _dateSpr->drawString(_datebuf, _dateSpr->width() - newDateWidth + xCorrection, 0);
 
             // jobb igazítás kijelzőn
-            uint16_t x = dsp.width() - _clockwidth - _dateConf.left;
+            int16_t prevX = dsp.width() - prevDateWidth - _dateConf.left;
+            if (prevX < 0) prevX = 0;
+            int16_t x = dsp.width() - newDateSpriteWidth - _dateConf.left;
+            if (x < 0) x = 0;
             uint16_t y = _dateConf.top;
 
+            const uint16_t clearHeight = max(prevDateHeight, h);
+            const int16_t  clearX = min(prevX, x);
+            const uint16_t prevRight = prevX + prevDateWidth + dateSpritePad;
+            const uint16_t newRight = x + newDateSpriteWidth;
+            uint16_t       clearW = max(prevRight, newRight) - clearX;
+            if (clearW < 1) clearW = 1;
+            if (clearX + clearW > dsp.width()) clearW = dsp.width() - clearX;
+            if (clearHeight > 0 && clearX < dsp.width()) { dsp.fillRect(clearX, y, clearW, clearHeight, config.theme.background); }
+
             _dateSpr->pushSprite(x, y);
-            _dateSpr->setTextDatum(lgfx::top_left); // Visszaállítjuk a fő sprite-ot balra igazításra
+            _datewidth = newDateSpriteWidth;
+            _dateheight = h;
         }
 #endif
     }
@@ -407,7 +485,7 @@ void ClockWidget::_printClock(bool redraw) {
 
     sprintf(_tmp, "%02d", currentSecond);
     const uint16_t secW = _spr->textWidth(_tmp);
-    uint16_t secH = _spr->fontHeight();
+    uint16_t       secH = _spr->fontHeight();
 
     uint16_t leftSec;
     uint16_t secTop = _secTopSpace;
@@ -419,12 +497,6 @@ void ClockWidget::_printClock(bool redraw) {
         const uint16_t splitY = getAmPmSplitY();
         secTop = ((int16_t)splitY - (int16_t)secH) / 2;
         if ((int16_t)secTop < 0) secTop = 0;
-    } else {
-#if DSP_MODEL == DSP_ILI9341
-        secTop = 38;
-#else
-        secTop = _secTopSpace;
-#endif
     }
 
     int16_t  secClearX = _linesleft + 1;
@@ -497,20 +569,24 @@ void ClockWidget::_formatDate() {
     }
     return;
 #else
+// clangformat off
     // ===== MINDEN MÁS KIJELZŐ: hosszú, szöveges forma, futásidőben kiválasztható =====
     switch (config.store.dateFormat) {
         case 0:
-            sprintf(_tmp, "%d. %s %2d. %s", _drawTimeinfo.tm_year + 1900, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_mday, LANG::dowf[_drawTimeinfo.tm_wday]);
-            break;                                                                                                                         // HU: YYYY. MMM DD. DOW
-        case 1: sprintf(_tmp, "%2d %s %d", _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // EN/RU: DD MMM YYYY
-        case 2: sprintf(_tmp, "%s %2d %s %d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900); break; // NL: DOW DD MMM YYYY
+            snprintf(_tmp, sizeof(_tmp), "%d. %s %2d. %s", _drawTimeinfo.tm_year + 1900, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_mday, LANG::dowf[_drawTimeinfo.tm_wday]);
+            break; // HU: YYYY. MMM DD. DOW
+        case 1: snprintf(_tmp, sizeof(_tmp), "%2d %s %d", _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900);
+            break; //  DD MMM YYYY
+        case 2: snprintf(_tmp, sizeof(_tmp), "%s %2d %s %d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900);
+            break; // NL: DOW DD MMM YYYY
         case 3:
-            sprintf(_tmp, "%s - %02d. %s. %04d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900);
-            break; // PL: DOW - DD MMM YYYY
+            snprintf(_tmp, sizeof(_tmp), "%s - %02d. %s. %04d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900);
+            break; // PL: DOW - DD. MMM. YYYY
         default:
-            sprintf(_tmp, "%s - %02d. %s. %d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900);
+            snprintf(_tmp, sizeof(_tmp), "%s, %02d. %s. %d", LANG::dowf[_drawTimeinfo.tm_wday], _drawTimeinfo.tm_mday, LANG::mnths[_drawTimeinfo.tm_mon], _drawTimeinfo.tm_year + 1900);
             break; // DE/SK/UA/ES/GR: DOW, DD. MMM YYYY
     }
+// clangformat on   
 #endif
 }
 void ClockWidget::_clearClock() {

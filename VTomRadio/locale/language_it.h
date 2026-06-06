@@ -12,17 +12,17 @@ const char fri[] PROGMEM = "Ve";
 const char sat[] PROGMEM = "Sa";
 const char sun[] PROGMEM = "Do";
 
-const char monf[] PROGMEM = "Lunedi";
-const char tuef[] PROGMEM = "Martedi";
-const char wedf[] PROGMEM = "Mercoledi";
-const char thuf[] PROGMEM = "Giovedi";
-const char frif[] PROGMEM = "Venerdi";
+const char monf[] PROGMEM = "Lunedì";
+const char tuef[] PROGMEM = "Martedì";
+const char wedf[] PROGMEM = "Mercoledì";
+const char thuf[] PROGMEM = "Giovedì";
+const char frif[] PROGMEM = "Venerdì";
 const char satf[] PROGMEM = "Sabato";
 const char sunf[] PROGMEM = "Domenica";
 
 const char jan[] PROGMEM = "Gennaio";
 const char feb[] PROGMEM = "Febbraio";
-const char mar[] PROGMEM = "Maezo";
+const char mar[] PROGMEM = "Marzo";
 const char apr[] PROGMEM = "Aprile";
 const char may[] PROGMEM = "Maggio";
 const char jun[] PROGMEM = "Giugno";

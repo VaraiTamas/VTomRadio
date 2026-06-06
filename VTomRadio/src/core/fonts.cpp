@@ -1,4 +1,5 @@
 #include "fonts.h"
+#include "../core/options.h"
 #include <LittleFS.h>
 #include <stdlib.h>
 #include <LovyanGFX.hpp>
@@ -6,8 +7,10 @@
 #include "config.h"
 
 // ================= VLW =================
+uint8_t* font_vlw_8 = nullptr;
 uint8_t* font_vlw_9 = nullptr;
 uint8_t* font_vlw_12 = nullptr;
+uint8_t* font_vlw_14 = nullptr;
 uint8_t* font_vlw_16 = nullptr;
 uint8_t* font_vlw_18 = nullptr;
 uint8_t* font_vlw_20 = nullptr;
@@ -28,7 +31,7 @@ static uint8_t* font_vlw_clock_sec_android = nullptr;
 // ================= GFX FONTOK =================
 using namespace lgfx::v1::fonts;
 
-const GFXfont Clock_GFXfont     = FreeMonoBold24pt7b;
+const GFXfont Clock_GFXfont = FreeMonoBold24pt7b;
 const GFXfont Clock_GFXfont_sec = FreeMonoBold18pt7b;
 
 #ifndef DSP_OLED
@@ -89,8 +92,10 @@ bool loadFonts() {
     freeFonts();
 
     // Kötelező fontok – hiányukára a rendszer visszaesik alap fontokra, de funkcionális marad
-    font_vlw_9  = loadFontFile("/fonts/roboto9.vlw");
+    font_vlw_8 = loadFontFile("/fonts/roboto8.vlw");
+    font_vlw_9 = loadFontFile("/fonts/roboto9.vlw");
     font_vlw_12 = loadFontFile("/fonts/roboto12.vlw");
+    font_vlw_14 = loadFontFile("/fonts/roboto14.vlw");
     font_vlw_16 = loadFontFile("/fonts/roboto16.vlw");
     font_vlw_18 = loadFontFile("/fonts/roboto18.vlw");
     font_vlw_20 = loadFontFile("/fonts/roboto20.vlw");
@@ -99,17 +104,33 @@ bool loadFonts() {
     font_vlw_26 = loadFontFile("/fonts/roboto26.vlw");
     font_vlw_36 = loadFontFile("/fonts/roboto36.vlw");
 
-    font_vlw_clock_digi        = loadFontFile("/fonts/digi7_it_94.vlw");
-    font_vlw_clock_sec_digi    = loadFontFile("/fonts/digi7_it_47.vlw");
-    font_vlw_clock_calibri     = loadFontFile("/fonts/calibri_94.vlw");
+#if DSP_MODEL == DSP_DUMMY
+
+#elif DSP_MODEL == DSP_ST7789
+
+#elif DSP_MODEL == DSP_ILI9341
+    font_vlw_clock_digi = loadFontFile("/fonts/digi7_it_68.vlw");
+    font_vlw_clock_sec_digi = loadFontFile("/fonts/digi7_it_30.vlw");
+    font_vlw_clock_calibri = loadFontFile("/fonts/calibri_70.vlw");
+    font_vlw_clock_sec_calibri = loadFontFile("/fonts/calibri_30.vlw");
+    font_vlw_clock_android = loadFontFile("/fonts/androidclock_67.vlw");
+    font_vlw_clock_sec_android = loadFontFile("/fonts/androidclock_28.vlw");
+
+#elif DSP_MODEL == DSP_ILI9488 || DSP_MODEL == DSP_ILI9486 || DSP_MODEL == DSP_ST7796
+    font_vlw_clock_digi = loadFontFile("/fonts/digi7_it_94.vlw");
+    font_vlw_clock_sec_digi = loadFontFile("/fonts/digi7_it_46.vlw");
+    font_vlw_clock_calibri = loadFontFile("/fonts/calibri_94.vlw");
     font_vlw_clock_sec_calibri = loadFontFile("/fonts/calibri_47.vlw");
-    font_vlw_clock_android     = loadFontFile("/fonts/androidclock_89.vlw");
+    font_vlw_clock_android = loadFontFile("/fonts/androidclock_89.vlw");
     font_vlw_clock_sec_android = loadFontFile("/fonts/androidclock_44.vlw");
+#elif DSP_MODEL == DSP_SSD1322
+
+#endif
+
 
     setClockFontStyle(config.store.clockFontStyle);
 
-    bool required = font_vlw_9 && font_vlw_12 && font_vlw_16 && font_vlw_18 &&
-                    font_vlw_20 && font_vlw_22 && font_vlw_24 && font_vlw_26 && font_vlw_36;
+    bool required = font_vlw_8 && font_vlw_9 && font_vlw_12 && font_vlw_14 && font_vlw_16 && font_vlw_18 && font_vlw_20 && font_vlw_22 && font_vlw_24 && font_vlw_26 && font_vlw_36;
     bool optional = (font_vlw_clock_digi && font_vlw_clock_sec_digi) || (font_vlw_clock_calibri && font_vlw_clock_sec_calibri) || (font_vlw_clock_android && font_vlw_clock_sec_android);
 
     if (!optional) Serial.println("[FONT] Optional fonts not fully loaded now uses default GFX fonts.");
@@ -131,18 +152,28 @@ void setClockFontStyle(uint8_t style) {
 
 void getClockFontStylePointers(uint8_t style, uint8_t** mainFont, uint8_t** secFont) {
     if (mainFont) {
-        if (style == CLOCKFONT_STYLE_CALIBRI)           *mainFont = font_vlw_clock_calibri;
-        else if (style == CLOCKFONT_STYLE_ANDROIDCLOCK) *mainFont = font_vlw_clock_android;
-        else                                             *mainFont = font_vlw_clock_digi;
+        if (style == CLOCKFONT_STYLE_CALIBRI)
+            *mainFont = font_vlw_clock_calibri;
+        else if (style == CLOCKFONT_STYLE_ANDROIDCLOCK)
+            *mainFont = font_vlw_clock_android;
+        else
+            *mainFont = font_vlw_clock_digi;
     }
     if (secFont) {
-        if (style == CLOCKFONT_STYLE_CALIBRI)           *secFont = font_vlw_clock_sec_calibri;
-        else if (style == CLOCKFONT_STYLE_ANDROIDCLOCK) *secFont = font_vlw_clock_sec_android;
-        else                                             *secFont = font_vlw_clock_sec_digi;
+        if (style == CLOCKFONT_STYLE_CALIBRI)
+            *secFont = font_vlw_clock_sec_calibri;
+        else if (style == CLOCKFONT_STYLE_ANDROIDCLOCK)
+            *secFont = font_vlw_clock_sec_android;
+        else
+            *secFont = font_vlw_clock_sec_digi;
     }
 }
 
 void freeFonts() {
+    if (font_vlw_8) {
+        free(font_vlw_8);
+        font_vlw_8 = nullptr;
+    }
     if (font_vlw_9) {
         free(font_vlw_9);
         font_vlw_9 = nullptr;
@@ -150,6 +181,10 @@ void freeFonts() {
     if (font_vlw_12) {
         free(font_vlw_12);
         font_vlw_12 = nullptr;
+    }
+    if (font_vlw_14) {
+        free(font_vlw_14);
+        font_vlw_14 = nullptr;
     }
     if (font_vlw_16) {
         free(font_vlw_16);
