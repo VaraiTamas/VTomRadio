@@ -189,4 +189,6 @@ Teljes FLASH memória törlése és a data/ mappa feltöltése szükséges!!
 
 
 ### Ha támogatni szeretnéd a munkámat itt meghívhatsz egy kávéra!!!     
-https://buymeacoffee.com/vtom
+<a href="https://buymeacoffee.com/vtom">
+    <img src="images/buymeacoffee.png" width="200">
+</a>
