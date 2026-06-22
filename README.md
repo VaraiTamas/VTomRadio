@@ -71,7 +71,7 @@ pio run --target uploadfs
 
 Aprogram beépített nyelveket és területi beállításokat tartalmaz HU, PL, GR, EN, RU, NL, SK, UA, DE nyelveken.   
 A myoptions.h fájlban az alábbi paranccsal állíthatod be.   
-```
+```cpp
 #define LANGUAGE HU
 ```
 
@@ -87,7 +87,7 @@ esp32-S3-devkit-C1 44 pins https://randomnerdtutorials.com/esp32-s3-devkitc-pino
 ## Nevnapok megjelenitese:
 A program képes megjeleníteni a HU, PL, NL, GR, DE nyelvű névnapokat.
 - A myoptions.h fájlban az alábbi paranccsal állíthatod be a megjelenítendő névnapokat.   
-```
+```cpp
 #define NAMEDAYS_FILE HU   
 ```
 A névnapok tárolása az alábbi fájlokban történik.
@@ -134,7 +134,7 @@ Teljes FLASH memória törlése és a data/ mappa feltöltése szükséges!!
 - Az óra megjelenítésénén egy számjegy esetén ne jelenjen meg előtte a nulla javítás és a másodperc középreigazítása minden fontnál.
 ### v0.1.2
 - SD kártya módban a képernyő fagyás hibájának javítása. Mostantól a myoptions.h fájlban az SD modot így kell beállítani.
-```
+```cpp
 /*----- SD CARD -----*/
  #define SDC_CS     18
  #define SD_SPIPINS 12, 13, 11, SDC_CS  // SCK, MISO, MOSI, CS
