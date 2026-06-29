@@ -122,9 +122,9 @@ Az encoderek használata esetén a `myoptions.h` fájlban definiálni kell őket
 #define SDC_CS 18
 ```
 ## RTC óramodul
-- Az I2C csatlakozó alkalmas közvetlenül óramodul RTC DS3132 fogadására. Használata esetén a myoptions.h fájlban be kell kapcsolni a definíciókat.
+- Az I2C csatlakozó alkalmas közvetlenül óramodul RTC DS3231 fogadására. Használata esetén a myoptions.h fájlban be kell kapcsolni a definíciókat. Az óramodul elhagyása esetén a kijelző órája induláskor 00:00:00 időt mutat, amig a netről nem tudja lekérdezni a pontos időt.
 ```cpp
-/* CLOCK MODUL RTC DS3132 */
+/* CLOCK MODUL RTC DS3231 */
 #define RTC_SCL			     7
 #define RTC_SDA			     8
 #define RTC_MODULE DS3231
