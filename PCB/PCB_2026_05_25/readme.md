@@ -1,4 +1,11 @@
-# PCB verzió 2026.05.25
+# PCB verzió 2026.05.25 
+## verzió: 2026.06.15 -től
+- Az SMD ellenállások mérete 1206 egységesen.
+- Az előző verzióhoz képest a DS3231 óramodul csatlakozójának 3,3V-os táp kimenetén 5 Volt táp van amit a POWER_LED és a DAC áramkör táplál. Így alvó üzemmódban ez az eszköz is lekapcsol. Lejjebb olvashatsz róla. A 3,3V elírás! A DS3231 erre fel van készítve.   
+## Verzió: 2026.06.21 -től
+- A PCB feliratok a 2026.06.15 verzióhoz képest javítva lettek, a feliratok a valóságot tükrözik.
+## -- Ismeretető --
+
 - **PCB mérete:** 98 × 100 mm
 - Kapcsolási rajz PDF formátumban letölthető: [schematics_2026.05.25.pdf](../../PCB/PCB_2026_05_25/schematics_2026.05.25.pdf)  
 - **R1-R2** az I2C busz SCL és SCA felhúzóellenállásai. 4.7kΩ (Capacitive touch és RTC modul DS3231 használja.)   
