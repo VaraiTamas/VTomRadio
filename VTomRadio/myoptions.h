@@ -20,11 +20,11 @@
 
 /* Itt tudod beállítani a program nyelvét
    You can set the program language here.
-   Supported languages: HU NL PL RU EN GR SK DE UA ES. */
+   Supported languages: HU NL PL RU EN GR SK DE UA ES CZ. */
 #define LANGUAGE HU
 
 /* -- Névnapok megjelenítése -- Display name days --
-Supported languages: HU, PL, NL, GR, DE (UA Local/namedays/namedays_UA.h is not filled in.) */
+Supported languages: HU, PL, NL, GR, DE, CZ (UA Local/namedays/namedays_UA.h is not filled in.) */
 #define NAMEDAYS_FILE HU
 
 #define USE_BUILTIN_LED false /* The RGB LED does not turn on.. */
