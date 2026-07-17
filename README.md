@@ -127,6 +127,8 @@ Itt olvashatsz róla bővebben: [PCB_2026_05_25](PCB/PCB_2026_05_25/readme.md)
     <img src="images/buymeacoffee.png" width="200">
 </a>  
 
+## v0.1.9 (by Marek Zettík)
+- Cseh nyelvi támogatás és névnapok hozzáadva. 
 ## v0.1.8
 - I2S audio könyvtár frissítése V3.4.7g-re. https://github.com/schreibfaul1/ESP32-audioI2S
 - A VOLUME CURVE beállításánál a hangerő 0 - 21 értékeihez tartozó dB értékek összehangolása az audioI2S könyvtárral.   

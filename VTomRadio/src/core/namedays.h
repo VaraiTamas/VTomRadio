@@ -16,7 +16,7 @@ extern const char* nameday_label;
 // Névnap-rotáció változói
 extern uint32_t namedayLastRotation;      // utolsó forgási idő
 extern uint8_t  namedayCurrentIndex;      // aktuális névindex
-extern char     currentNamedayBuffer[30]; // puffer az aktuális névhez
+extern char     currentNamedayBuffer[50]; // puffer az aktuális névhez
 extern int      lastNamedayDay;           // utolsó nap a forgatás visszaállítására
 extern int      lastNamedayMonth;         // a rotáció visszaállításának utolsó hónapja
 
