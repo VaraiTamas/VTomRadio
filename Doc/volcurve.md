@@ -4,7 +4,7 @@ A készülék hangerőszabályzása nem lineáris, hanem egy hangerőgörbét ha
 ## Honnan kapja a kezdeti értékeket induláskor?    
 Induláskor a rendszer az alábbi sorrendben dolgozik:
 
-1. Megpróbálja betölteni a hangerőgörbét a fájlból:
+1. Megpróbálja betölteni a hangerőgörbét az ESP32 FLASH LittleFS fájlból:
 /data/data/volcurve.csv  
 2.  Ha ez a fájl hiányzik vagy hibás formátumú, akkor a korábban mentett (EEPROM) értékek maradnak érvényben.
 3. Ha az EEPROM-ban lévő görbe is érvénytelen, akkor gyári alapértékeket állít be a config.cpp fájlban található `kDefaultVolumeCurveDb` tömbből.   
@@ -53,8 +53,8 @@ A beállítás a webes felületen is indítható.
 ![volume curve](../images/volcurve.jpg)<br><br>
 
 ## A gombbok működése a következő: 
-**SAVE CSV** -  a webes felületen beállított görbét menti az ESP32 LittleFS  data/data/volcurve.csv fájlba. A program következő indításakor ezt tölti be.   
-**RESET BASE CURVE** -  a gyári alapértékekre állítja vissza a görbét. Ha azt szeretnénk, hogy a következő indításkor ez legyen érvénybe, akkor a **SAVE CSV** gombbal el kell azt menteni!    
+**SAVE CSV** -  a webes felületen beállított görbét menti az ESP32 FLASH LittleFS  data/data/volcurve.csv fájlba. A program következő indításakor ezt tölti be.     
+**RESET BASE CURVE** -  a gyári alapértékekre állítja vissza a görbét. Ha azt szeretnéd, hogy a következő indításkor ez legyen érvénybe, akkor a **SAVE CSV** gombbal el kell menteni azt!    
 **EXPORT CSV** -  a webes felületen beállított görbét letölthetővé teszi a böngésző számára. A fájl neve: volcurve.csv .    
 **IMPORT CSV** -  a böngészőből feltölthető a volcurve.csv fájl. A program ellenőrzi a formátumot és a 21 sor meglétét. Hibás fájl esetén visszaáll gyári alapértékre.
 <br><br>
