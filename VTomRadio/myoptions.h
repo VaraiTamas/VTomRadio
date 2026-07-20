@@ -41,6 +41,7 @@ Supported languages: HU, PL, NL, GR, DE, CZ (UA Local/namedays/namedays_UA.h is 
 #define DSP_MODEL DSP_ILI9488
 //#define DSP_MODEL DSP_ST7796
 //#define DSP_MODEL DSP_ILI9341
+//#define DSP_MODEL DSP_ST7789
 
 /*----- DISPLAY PIN SETS -----*/
 #define TFT_DC         9

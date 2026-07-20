@@ -432,7 +432,7 @@ void VuWidget::_draw() {
             if (!_labelSpr || _labelSpr->width() == 0 || _labelSpr->height() == 0) { return; }
 
             bool      fontLoaded = vu_applyLabelFont(_labelSpr, _vuConf.textsize);
-           #if DSP_MODEL == DSP_ILI9341
+           #if (DSP_MODEL == DSP_ILI9341) || (DSP_MODEL == DSP_ST7789)
             const int labelPadTop = 0;
             #else
             const int labelPadTop = 2;
@@ -477,7 +477,7 @@ void VuWidget::_draw() {
             bool fontLoaded = false;
 
             if (label_left >= 0) {
-                  #if DSP_MODEL == DSP_ILI9341
+                  #if (DSP_MODEL == DSP_ILI9341) || (DSP_MODEL == DSP_ST7789)
                 const int labelPadTop = 0;
                 #else
                 const int labelPadTop = 1;

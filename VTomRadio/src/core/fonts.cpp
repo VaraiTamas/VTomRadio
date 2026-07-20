@@ -106,9 +106,9 @@ bool loadFonts() {
 
 #if DSP_MODEL == DSP_DUMMY
 
-#elif DSP_MODEL == DSP_ST7789
 
-#elif DSP_MODEL == DSP_ILI9341
+
+#elif DSP_MODEL == DSP_ILI9341 || DSP_MODEL == DSP_ST7789
     font_vlw_clock_digi = loadFontFile("/fonts/digi7_it_68.vlw");
     font_vlw_clock_sec_digi = loadFontFile("/fonts/digi7_it_30.vlw");
     font_vlw_clock_calibri = loadFontFile("/fonts/calibri_70.vlw");

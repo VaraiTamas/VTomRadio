@@ -128,7 +128,7 @@ void ClockWidget::_calcSize() {
     uint16_t w_right = w_sec;
 
     if (config.store.clockAmPmStyle) {
-#if DSP_MODEL == DSP_ILI9341
+#if (DSP_MODEL == DSP_ILI9341) || (DSP_MODEL == DSP_ST7789)
         if (font_vlw_14) {
             _spr->loadFont(font_vlw_14);
             _spr->setTextSize(1);
@@ -297,7 +297,7 @@ void ClockWidget::_printClock(bool redraw) {
     };
 
     auto applyAmPmFont = [this]() {
-#if DSP_MODEL == DSP_ILI9341
+#if (DSP_MODEL == DSP_ILI9341) || (DSP_MODEL == DSP_ST7789)
         if (font_vlw_14) {
             _spr->loadFont(font_vlw_14);
             _spr->setTextSize(1);
@@ -431,11 +431,11 @@ void ClockWidget::_printClock(bool redraw) {
                 if (_dateSpr->getBuffer()) _dateSpr->deleteSprite();
                 _dateSpr->createSprite(newDateSpriteWidth, h);
             }
-#    if DSP_MODEL == DSP_ILI9341
+    #if (DSP_MODEL == DSP_ILI9341) || (DSP_MODEL == DSP_ST7789)
             int xCorrection = -4; // ILI-nél a textWidth néha 1 pixelrel kevesebbet ad, mint amennyi hely kell a szövegnek, így +1 pixel ráhagyás.
-#    else
+    #else
             int xCorrection = 0;
-#    endif
+    #endif
 
             _dateSpr->fillSprite(config.theme.background);
             _dateSpr->setTextDatum(lgfx::top_left);
