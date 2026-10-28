@@ -527,6 +527,7 @@ bool NetServer::begin(bool quiet) {
     strlcpy(j.objectId, request->getParam("objectId")->value().c_str(), sizeof(j.objectId));
     j.reqId = dlna_next_reqId();
     j.hardLimit = request->hasParam("limit") ? request->getParam("limit")->value().toInt() : 20000;
+    j.start = request->hasParam("scanStart") ? request->getParam("scanStart")->value().toInt() : 0;
 
     dlna_status_setBusy(j, "queued");
     if (!dlna_worker_enqueue(j)) {
@@ -534,7 +535,7 @@ bool NetServer::begin(bool quiet) {
       request->send(503, "application/json", "{\"queued\":false,\"busy\":true}");
       return;
     }
-    request->send(202, "application/json", "{\"queued\":true}");
+    request->send(202, "application/json", String("{\"queued\":true,\"reqId\":") + j.reqId + "}");
   });
 
   /* ================= DLNA APPEND ================= */
@@ -557,6 +558,7 @@ bool NetServer::begin(bool quiet) {
     strlcpy(j.objectId, request->getParam("objectId")->value().c_str(), sizeof(j.objectId));
     j.reqId = dlna_next_reqId();
     j.hardLimit = request->hasParam("limit") ? request->getParam("limit")->value().toInt() : 20000;
+    j.start = request->hasParam("scanStart") ? request->getParam("scanStart")->value().toInt() : 0;
 
     dlna_status_setBusy(j, "queued");
     if (!dlna_worker_enqueue(j)) {
@@ -564,7 +566,84 @@ bool NetServer::begin(bool quiet) {
       request->send(503, "application/json", "{\"queued\":false,\"busy\":true}");
       return;
     }
-    request->send(202, "application/json", "{\"queued\":true}");
+    request->send(202, "application/json", String("{\"queued\":true,\"reqId\":") + j.reqId + "}");
+  });
+
+  /* ================= DLNA SELECTED TRACKS (build/append) ================= */
+  webserver.on(
+    "/dlna/sel", HTTP_POST,
+    [](AsyncWebServerRequest *request) {
+      const String mode = request->hasParam("mode") ? request->getParam("mode")->value() : String("");
+      if (mode != "build" && mode != "append") {
+        request->send(400, "application/json", "{\"queued\":false,\"error\":\"bad mode\"}");
+        return;
+      }
+      if (dlna_isBusy()) {
+        request->send(429, "application/json", "{\"queued\":false,\"busy\":true}");
+        return;
+      }
+      if (dlna_sel_overflow()) {
+        request->send(413, "application/json", "{\"queued\":false,\"error\":\"selection too large\"}");
+        return;
+      }
+      if (dlna_sel_empty()) {
+        request->send(400, "application/json", "{\"queued\":false,\"error\":\"empty selection\"}");
+        return;
+      }
+
+      DlnaJob j{};
+      j.type = (mode == "append") ? DJ_APPEND_SEL : DJ_BUILD_SEL;
+      j.reqId = dlna_next_reqId();
+
+      dlna_status_setBusy(j, "queued");
+      if (!dlna_worker_enqueue(j)) {
+        dlna_status_setDone(j, false, 503, "queue full");
+        request->send(503, "application/json", "{\"queued\":false,\"busy\":true}");
+        return;
+      }
+      request->send(202, "application/json", String("{\"queued\":true,\"reqId\":") + j.reqId + "}");
+    },
+    nullptr,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      // Foglalt worker mellett nem írjuk át a függőben lévő kijelölést
+      if (dlna_isBusy()) return;
+      dlna_sel_chunk(data, len, index);
+    }
+  );
+
+  /* ================= DLNA CLEAR (DLNA lista törlése) ================= */
+  webserver.on("/dlna/clear", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (dlna_isBusy()) {
+      request->send(429, "application/json", "{\"ok\":false,\"busy\":true}");
+      return;
+    }
+
+    if (config.store.playlistSource == PL_SRC_DLNA) {
+      // Az aktív lista törlése előtt visszaváltunk a web rádió listára
+      if (player.isRunning()) {
+        player.sendCommand({PR_STOP, 0});
+      }
+      config.store.playlistSource = PL_SRC_WEB;
+      config.saveValue(&config.store.playlistSource, (uint8_t)PL_SRC_WEB);
+      config.loadStation(config.lastStation());
+      if (player_on_station_change) {
+        player_on_station_change();
+      }
+    }
+
+    xSemaphoreTake(g_littlefsMux, portMAX_DELAY);
+    LittleFS.remove(PLAYLIST_DLNA_PATH);
+    LittleFS.remove(INDEX_DLNA_PATH);
+    LittleFS.remove(TMP_PATH);
+    xSemaphoreGive(g_littlefsMux);
+
+    config.store.lastDlnaStation = 1;
+    config.saveValue(&config.store.lastDlnaStation, (uint16_t)1);
+
+    netserver.requestOnChange(GETINDEX, 0);
+    netserver.requestOnChange(GETPLAYERMODE, 0);
+
+    request->send(200, "application/json", "{\"ok\":true}");
   });
 
   /* ================= DLNA STATUS ================= */
@@ -580,10 +659,11 @@ bool NetServer::begin(bool quiet) {
       Serial.println("[DLNA] Build completed → reset index to 1");
     }
 
-    char buf[256];
+    char buf[288];
     snprintf(
-      buf, sizeof(buf), "{\"busy\":%s,\"ok\":%s,\"err\":%d,\"reqId\":%u,\"playlistVer\":%u,\"msg\":\"%s\"}", g_dlnaStatus.busy ? "true" : "false",
-      g_dlnaStatus.ok ? "true" : "false", g_dlnaStatus.err, (unsigned)g_dlnaStatus.reqId, (unsigned)g_dlnaStatus.playlistVer, g_dlnaStatus.msg
+      buf, sizeof(buf), "{\"busy\":%s,\"ok\":%s,\"err\":%d,\"reqId\":%u,\"playlistVer\":%u,\"scanNext\":%u,\"scanTotal\":%u,\"msg\":\"%s\"}",
+      g_dlnaStatus.busy ? "true" : "false", g_dlnaStatus.ok ? "true" : "false", g_dlnaStatus.err, (unsigned)g_dlnaStatus.reqId,
+      (unsigned)g_dlnaStatus.playlistVer, (unsigned)g_dlnaStatus.scanNext, (unsigned)g_dlnaStatus.scanTotal, g_dlnaStatus.msg
     );
 
     // Cache OFF a statusra
@@ -602,6 +682,9 @@ bool NetServer::begin(bool quiet) {
     if (player.isRunning()) {
       player.sendCommand({PR_STOP, 0});
     }
+
+    // A lista közben változhatott (build/append/szerkesztés), az index legyen friss
+    config.indexDLNAPlaylist();
 
   #ifdef USE_SD
     if (config.getMode() == PM_SDCARD) {
@@ -1105,8 +1188,8 @@ void NetServer::processQueue() {
 #endif
 #ifdef USE_DLNA  //DLNA mod
         if (config.getMode() == PM_WEB && config.store.playlistSource == PL_SRC_DLNA) {
-          config.indexDLNAPlaylist();
           config.initDLNAPlaylist();
+          getPlaylist(clientId);   // a böngésző ebből tölti újra a listát
           break;
         }
 #endif
@@ -1549,7 +1632,6 @@ void NetServer::onWsMessage(void *arg, uint8_t *data, size_t len, uint8_t client
         config.store.playlistSource = PL_SRC_DLNA;
         config.saveValue(&config.store.playlistSource, (uint8_t)PL_SRC_DLNA);
 
-        config.indexDLNAPlaylist();
         config.initDLNAPlaylist();
 
         netserver.requestOnChange(GETINDEX, 0);
@@ -1840,7 +1922,7 @@ void handleNotFound(AsyncWebServerRequest *request) {
   if (request->method() == HTTP_GET) {
     //DLNA mod
 #ifdef USE_DLNA
-    if (request->method() == HTTP_GET && request->url().startsWith("/data/dlna_")) {
+    if (request->method() == HTTP_GET && (request->url().startsWith("/data/dlna_") || request->url() == PLAYLIST_DLNA_PATH)) {
 
       String path = request->url();
       Serial.printf("[DLNA][HTTP] GET %s\n", path.c_str());
@@ -1857,7 +1939,9 @@ void handleNotFound(AsyncWebServerRequest *request) {
         type = "text/plain";
       }
 
-      request->send(LittleFS, path, type);
+      AsyncWebServerResponse *dlnaResp = request->beginResponse(LittleFS, path, type);
+      dlnaResp->addHeader("Cache-Control", "no-store");
+      request->send(dlnaResp);
       return;
     }
 #endif

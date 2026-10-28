@@ -130,6 +130,12 @@ Itt olvashatsz róla bővebben: [PCB_2026_06_21](PCB/PCB_2026_06_21/readme.md)
     <img src="images/buymeacoffee.png" width="200">
 </a> 
 
+## v0.2.4   
+- DLNA: mostantól a lejátszási lista összeállításánál a zenefájlokat a fájlok előtt megjelenő jelölőnégyzettel lehet kiválasztani.  
+- A kijelölt számokból új lista építése vagy meglévőhöz fűzése lehetséges.  
+- A DLNA lista törlésének lehetősége a lista összeállító mező jobb szélén elhelyezett kuka ikonra kattintva érhető el.  
+- Megújult DLNA weboldal és megbízhatóbb listafrissítés (gyorsítótár nélkül).
+
 ## v0.2.3
 - Új funkció. Az enkoder dupla kattintásra a forrásválasztás menüből történik és a WEB UI-ban is elérhető.
 - Az intelligens hálózatválasztás továbbfejlesztve, stabilabb csatlakozás érhető el.

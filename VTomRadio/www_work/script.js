@@ -2,7 +2,6 @@ var hostname = window.location.hostname;
 var modesd = false;
 var modedlna = false;
 var playlistTimer = null;
-var lastPlaylistLoad = 0;
 var currentSource = 'web';
 const query = window.location.search;
 const params = new URLSearchParams(query);
@@ -132,9 +131,9 @@ function onMessage(event) {
       getId('pleditorwrap').classList.add('hidden');
       getId('plsvg').classList.remove('hidden');
       getId('editbacksvg').classList.add('hidden');
-      // Repeated playermode messages arrive in bursts; load the playlist once.
-      if(playlistTimer) clearTimeout(playlistTimer);
-      if(prevSource!=currentSource || Date.now()-lastPlaylistLoad>2000){
+      // Repeated playermode messages arrive in bursts; load the playlist once after a source change.
+      if(prevSource!=currentSource){
+        if(playlistTimer) clearTimeout(playlistTimer);
         playlistTimer = setTimeout(function(){
           playlistTimer = null;
           generatePlaylist(`http://${hostname}/data/playlist.csv`+"?"+new Date().getTime());
@@ -188,7 +187,7 @@ function onMessage(event) {
       });
     }else{
       if(typeof data.current !== 'undefined') { setCurrentItem(data.current); return; }
-      if(typeof data.file !== 'undefined') { generatePlaylist(data.file+"?"+new Date().getTime()); wsSend('submitplaylistdone=1'); return; }
+      if(typeof data.file !== 'undefined') { generatePlaylist(`http://${hostname}/data/playlist.csv`+"?"+new Date().getTime()); wsSend('submitplaylistdone=1'); return; }
       if(typeof data.act !== 'undefined'){ data.act.forEach(showclass=> { classEach(showclass, function(el) { el.classList.remove("hidden"); }); }); return; }
       Object.keys(data).forEach(key=>{
         setupElement(key, data[key]);
@@ -380,6 +379,19 @@ function buildGenreIndexFromCSV(fileData){
   }
   __genreList = Array.from(set).sort((a,b)=>a.localeCompare(b));
 }
+function alignPlaylistBg(){
+  const pl = getId('playlist');
+  if(!pl) return;
+  const lis = pl.children;
+  let last = null, k = 0;
+  for(let i = lis.length - 1; i >= 0; i--){
+    if(lis[i].style.display !== 'none'){ last = lis[i]; k = i + 1; break; }
+  }
+  const bottom = last ? last.offsetTop + last.offsetHeight : 0;
+  // Az üres rész csíkozása közvetlenül az utolsó sor után, a sor paritásának megfelelően folytatódik
+  pl.style.backgroundSize = '2px 80px';
+  pl.style.backgroundPositionY = (bottom + (k % 2 ? 40 : 0)) + 'px';
+}
 function filterPlaylist() {
   const customInput = getId('custominput');
   const playlist = getId('playlist');
@@ -390,6 +402,7 @@ function filterPlaylist() {
     const name = item.textContent.toLowerCase();
     item.style.display = name.includes(searchTerm) ? '' : 'none';
   });
+  alignPlaylistBg();
 }
 function annotatePlaylistWithGenres(){
   const nodes = document.querySelectorAll('#playlist [attr-id]');
@@ -403,7 +416,6 @@ function annotatePlaylistWithGenres(){
   });
 }
 function generatePlaylist(path){
-  lastPlaylistLoad = Date.now();
   getId('playlist').innerHTML='<div id="progress"><span id="loader"></span></div>';
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {

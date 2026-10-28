@@ -3,6 +3,7 @@
 #ifdef USE_DLNA
 
 #include "dlna_index.h"
+#include "dlna_worker.h"
 #include "dlna_http_guard.h"
 #include <WiFiClient.h>
 #include <HTTPClient.h>
@@ -287,7 +288,8 @@ bool DlnaIndex::listContainer(const String& controlUrl, const String& objectId, 
 
    String t = jsonEscape(ititles[i]);
    String id = (i < iids.size()) ? jsonEscape(iids[i]) : "";
-   outJson += "{\"type\":\"item\",\"id\":\"" + id + "\",\"title\":\"" + t + "\"}";
+   String u = (i < iurls.size()) ? jsonEscape(iurls[i]) : "";
+   outJson += "{\"type\":\"item\",\"id\":\"" + id + "\",\"title\":\"" + t + "\",\"url\":\"" + u + "\"}";
   }
 
   outJson += "]}";
@@ -297,17 +299,45 @@ bool DlnaIndex::listContainer(const String& controlUrl, const String& objectId, 
 // ================================================================
 // Quick decide: is there any item/container in this objectId
 // ================================================================
-bool DlnaIndex::browseAndDecide(const String& controlUrl, const String& objectId, bool& hasItems, bool& hasContainers) {
+bool DlnaIndex::browseAndDecide(const String& controlUrl, const String& objectId, bool& hasItems, bool& hasContainers,
+                                uint32_t startIdx, uint32_t* nextStart, uint32_t* totalOut) {
   hasItems = false;
-  hasContainers = false;
+  if (nextStart) *nextStart = 0;
+  if (totalOut) *totalOut = 0;
 
-  String didl;
-  uint32_t ret = 0, tot = 0;
-  if (!browsePage(controlUrl, objectId, 0, 25, didl, ret, tot)) return false;
+  // Az almappák gyakran elöl vannak, ezért a számok a későbbi oldalakon lehetnek.
+  // Időkeret után megáll, és *nextStart-ban jelzi, honnan folytatható.
+  const uint32_t pageSize = 25;
+  const uint32_t budgetMs = 15000;
+  const uint32_t t0 = millis();
+  uint32_t start = startIdx;
 
-  // lightweight checks
-  if (didl.indexOf("<item") >= 0) hasItems = true;
-  if (didl.indexOf("<container") >= 0) hasContainers = true;
+  while (true) {
+    String didl;
+    uint32_t ret = 0, tot = 0;
+    if (!browsePage(controlUrl, objectId, start, pageSize, didl, ret, tot)) return false;
+    if (totalOut) *totalOut = tot;
+
+    if (didl.indexOf("<item") >= 0) {
+      hasItems = true;
+      return true;
+    }
+    if (didl.indexOf("<container") >= 0) hasContainers = true;
+
+    if (ret == 0) break;
+    start += ret;
+    if (tot > 0 && start >= tot) break;
+
+    char buf[64];
+    snprintf(buf, sizeof(buf), "Scanning folder… %u/%u", (unsigned)start, (unsigned)tot);
+    dlna_status_progress(buf);
+
+    if (millis() - t0 > budgetMs) {
+      if (nextStart) *nextStart = start;
+      return true;
+    }
+    vTaskDelay(1);
+  }
 
   return true;
 }
@@ -392,6 +422,9 @@ bool DlnaIndex::autoBuildPlaylist(const String& controlUrl,
       // ---- append tracks ----
       if (ret > 0) {
         appendTracksToFile(didl, f, appended, hardLimit);
+        char pbuf[64];
+        snprintf(pbuf, sizeof(pbuf), "Building playlist… %u tracks", (unsigned)appended);
+        dlna_status_progress(pbuf);
       }
 
       // ---- dive into containers ----

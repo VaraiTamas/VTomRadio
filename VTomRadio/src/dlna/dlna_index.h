@@ -18,10 +18,13 @@ public:
   bool listContainer(const String& controlUrl, const String& objectId, String& outJson, uint32_t start);
 
   // Used by /dlna/build endpoint decision
-  bool browseAndDecide(const String& controlUrl, const String& objectId, bool& hasItems, bool& hasContainers);
+  bool browseAndDecide(const String& controlUrl, const String& objectId, bool& hasItems, bool& hasContainers,
+                       uint32_t startIdx = 0, uint32_t* nextStart = nullptr, uint32_t* total = nullptr);
 
   // Builds playlist from objectId (supports deep containers)
   bool autoBuildPlaylist(const String& controlUrl, const String& objectId, uint8_t maxDepth = 4, uint32_t hardLimit = 5000);
+
+  String beautifyTitle(const String& raw);
 
 private:
   // SOAP browse one page, returns DIDL xml fragment (decoded from CDATA, entities simplified)
@@ -35,7 +38,6 @@ private:
 
   String buildBrowseEnvelope(const String& objectId, uint32_t start, uint32_t count);
   void decodeEntities(String& s);
-  String beautifyTitle(const String& raw);
   // DIDL parsers
   void extractContainersFromDIDL(const String& didl, std::vector<String>& ids, std::vector<String>& titles);
   void extractItemsFromDIDL(const String& didl, std::vector<String>& ids, std::vector<String>& titles, std::vector<String>& urls);

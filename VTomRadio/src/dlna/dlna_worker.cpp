@@ -5,13 +5,14 @@
 #include "dlna_worker.h"
 #include "dlna_service.h"
 #include <LittleFS.h>
+#include <WiFi.h>
 #include "esp_task_wdt.h"
 #include "dlna_index.h"
 #include "dlna_http_guard.h" 
 
 QueueHandle_t g_dlnaQueue = nullptr;
 SemaphoreHandle_t g_littlefsMux = nullptr;
-DlnaStatus g_dlnaStatus = {false,false,0,0,0,{0}};
+DlnaStatus g_dlnaStatus = {false,false,0,0,0,{0},0,0};
 
 static TaskHandle_t s_workerTask = nullptr;
 static uint32_t s_playlistVer = 1;
@@ -29,6 +30,8 @@ void dlna_status_setBusy(const DlnaJob& j, const char* msg) {
   g_dlnaStatus.ok = false;
   g_dlnaStatus.err = 0;
   g_dlnaStatus.reqId = j.reqId;
+  g_dlnaStatus.scanNext = 0;
+  g_dlnaStatus.scanTotal = 0;
   strncpy(g_dlnaStatus.msg, msg ? msg : "busy", sizeof(g_dlnaStatus.msg)-1);
   g_dlnaStatus.msg[sizeof(g_dlnaStatus.msg)-1] = 0;
 }
@@ -42,8 +45,38 @@ void dlna_status_setDone(const DlnaJob& j, bool ok, int err, const char* msg) {
   g_dlnaStatus.msg[sizeof(g_dlnaStatus.msg)-1] = 0;
 }
 
-/*
-static bool write_playlist_atomic(const char* tmpPath, const char* finalPath, const String& content) {
+void dlna_status_progress(const char* msg) {
+  if (!g_dlnaStatus.busy) return;
+  strncpy(g_dlnaStatus.msg, msg ? msg : "", sizeof(g_dlnaStatus.msg)-1);
+  g_dlnaStatus.msg[sizeof(g_dlnaStatus.msg)-1] = 0;
+}
+
+// true: van közvetlen track; false: a job státusza már lezárva (422 = nincs, 423 = szünet, a UI dönthet a folytatásról)
+static bool scan_for_tracks(const DlnaJob& j, DlnaIndex& idx, const String& ctlUrl, bool& hasItems) {
+  bool hasContainers = j.start > 0;
+  uint32_t next = 0, total = 0;
+  hasItems = false;
+
+  if (!idx.browseAndDecide(ctlUrl, j.objectId, hasItems, hasContainers, j.start, &next, &total)) {
+    dlna_status_setDone(j, false, 500, "browse failed");
+    return false;
+  }
+  if (hasItems) return true;
+
+  if (next > 0) {
+    char buf[96];
+    snprintf(buf, sizeof(buf), "No tracks in the first %u of %u entries yet", (unsigned)next, (unsigned)total);
+    g_dlnaStatus.scanNext = next;
+    g_dlnaStatus.scanTotal = total;
+    dlna_status_setDone(j, false, 423, buf);
+    return false;
+  }
+
+  dlna_status_setDone(j, false, 422, hasContainers ? "No tracks in this container (only subfolders)" : "Empty container");
+  return false;
+}
+
+/*static bool write_playlist_atomic(const char* tmpPath, const char* finalPath, const String& content) {
   // mutex: egy időben ne olvassa/írja más
   xSemaphoreTake(g_littlefsMux, portMAX_DELAY);
 
@@ -92,6 +125,85 @@ static inline void worker_yield() {
   //esp_task_wdt_reset();
   vTaskDelay(1); // 1 tick yield
 }
+
+// A TMP_PATH fájl tartalmával lecseréli a DLNA playlistet
+static void commit_tmp_as_build(const DlnaJob& j) {
+  xSemaphoreTake(g_littlefsMux, portMAX_DELAY);
+  LittleFS.remove(PLAYLIST_DLNA_PATH);
+  bool ok = LittleFS.rename(TMP_PATH, PLAYLIST_DLNA_PATH);
+  xSemaphoreGive(g_littlefsMux);
+
+  if (!ok) {
+    dlna_status_setDone(j, false, 550, "rename failed");
+    return;
+  }
+
+  config.sdResumePos = 0;
+  config.resumeAfterModeChange = false;
+
+  // 🔑 DLNA build -> reset DLNA index ONLY
+  config.store.lastDlnaStation = 1;
+  config.saveValue(&config.store.lastDlnaStation, (uint16_t)1);
+
+  config.indexDLNAPlaylist();   // az index nélkül a régi (rövid) index maradna érvényben
+  bumpPlaylistVer();
+  dlna_status_setDone(j, true, 0, "build ok");
+}
+
+// A TMP_PATH fájl tartalmát hozzáfűzi a DLNA playlisthez
+static void commit_tmp_as_append(const DlnaJob& j) {
+  xSemaphoreTake(g_littlefsMux, portMAX_DELAY);
+
+  bool needNl = false;
+  {
+    File chk = LittleFS.open(PLAYLIST_DLNA_PATH, FILE_READ);
+    if (chk && chk.size() > 0) {
+      chk.seek(chk.size() - 1);
+      needNl = (chk.read() != '\n');
+    }
+    if (chk) chk.close();
+  }
+
+  File out = LittleFS.open(PLAYLIST_DLNA_PATH, FILE_APPEND);
+  File in  = LittleFS.open(TMP_PATH, FILE_READ);
+
+  bool ok = false;
+  if (out && in) {
+    if (needNl) out.print("\n");
+    while (in.available()) out.write(in.read());
+    ok = true;
+  }
+
+  if (out) out.close();
+  if (in)  in.close();
+  LittleFS.remove(TMP_PATH);
+
+  xSemaphoreGive(g_littlefsMux);
+
+  if (!ok) {
+    dlna_status_setDone(j, false, 551, "append failed");
+    return;
+  }
+
+  config.indexDLNAPlaylist();
+  bumpPlaylistVer();
+  dlna_status_setDone(j, true, 0, "append ok");
+}
+
+// ===== Kijelölt trackek (POST /dlna/sel) =====
+static String s_selBody;
+static bool s_selOverflow = false;
+
+void dlna_sel_chunk(const uint8_t* data, size_t len, size_t index) {
+  const size_t kMaxSel = 24 * 1024;
+  if (index == 0) { s_selBody = String(); s_selOverflow = false; }
+  if (s_selOverflow) return;
+  if (s_selBody.length() + len > kMaxSel) { s_selOverflow = true; s_selBody = String(); return; }
+  s_selBody.concat((const char*)data, len);
+}
+
+bool dlna_sel_overflow() { return s_selOverflow; }
+bool dlna_sel_empty() { return s_selBody.length() == 0; }
 
 // ===== Aszinkron list állapot =====
 static SemaphoreHandle_t s_listMux = nullptr;
@@ -162,7 +274,7 @@ static void dlna_worker_task(void* ) {
   for (;;) {
     if (xQueueReceive(g_dlnaQueue, &j, portMAX_DELAY) != pdTRUE) continue;
 
-    Serial.printf("[DLNA][WORK] job=%d objectId='%s'\n", (int)j.type, j.objectId);
+    Serial.printf("[DLNA][WORK] job=%d objectId='%s' heap=%u maxblk=%u rssi=%d\n", (int)j.type, j.objectId, (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap(), (int)WiFi.RSSI());
 
     if (j.type == DJ_CANCEL) {
       dlna_status_setDone(j, true, 0, "cancelled");
@@ -198,25 +310,13 @@ static void dlna_worker_task(void* ) {
       }
 
       DlnaIndex idx;
-      bool hasItems = false, hasContainers = false;
+      bool hasItems = false;
 
-      ok = idx.browseAndDecide(ctlUrl, j.objectId, hasItems, hasContainers);
+      if (!scan_for_tracks(j, idx, ctlUrl, hasItems)) continue;
+      ok = true;
 
-      
-      if (!ok) {
-        dlna_status_setDone(j, false, 500, "browse failed");
-        continue;
-      }
-
-      if (!hasItems) { 
-       // van konténer, de track nincs közvetlenül -> UI-nak jelezzük szépen
-       dlna_status_setDone(j, false, 422, hasContainers ? "No tracks in this container (only subfolders)" : "Empty container");
-       continue;
-      } 
-
-      uint8_t depth;
-      if (hasItems) depth = 2;
-      else depth = 6;
+      // Csak a megjelenített mappa tartalma kerül a listába, almappákba nem lépünk be.
+      const uint8_t depth = 0;
 
       uint32_t limit = j.hardLimit ? j.hardLimit : 20000;
 
@@ -232,25 +332,7 @@ static void dlna_worker_task(void* ) {
         continue;
       }
 
-      // ===== ATOMIKUS CSERE =====
-      xSemaphoreTake(g_littlefsMux, portMAX_DELAY);
-      LittleFS.remove(PLAYLIST_DLNA_PATH);
-      ok = LittleFS.rename(TMP_PATH, PLAYLIST_DLNA_PATH);
-      xSemaphoreGive(g_littlefsMux);
-
-      if (!ok) {
-        dlna_status_setDone(j, false, 550, "rename failed");
-        continue;
-      }
-
-      config.sdResumePos = 0;
-      config.resumeAfterModeChange = false;
-
-      // 🔑 DLNA build -> reset DLNA index ONLY
-      config.store.lastDlnaStation = 1;
-      config.saveValue(&config.store.lastDlnaStation, (uint16_t)1);
-
-      dlna_status_setDone(j, true, 0, "build ok");
+      commit_tmp_as_build(j);
     }
 
     else if (j.type == DJ_APPEND) {
@@ -263,23 +345,13 @@ static void dlna_worker_task(void* ) {
       }
 
       DlnaIndex idx;
-      bool hasItems = false, hasContainers = false;
+      bool hasItems = false;
 
-      ok = idx.browseAndDecide(ctlUrl, j.objectId, hasItems, hasContainers);
-      if (!ok) {
-        dlna_status_setDone(j, false, 500, "browse failed");
-        continue;
-      }
+      if (!scan_for_tracks(j, idx, ctlUrl, hasItems)) continue;
+      ok = true;
 
-      if (!hasItems) { 
-       // van konténer, de track nincs közvetlenül -> UI-nak jelezzük szépen
-       dlna_status_setDone(j, false, 422, hasContainers ? "No tracks in this container (only subfolders)" : "Empty container");
-       continue;
-      } 
-
-      uint8_t depth;
-      if (hasItems) depth = 2;
-      else depth = 6;
+      // Csak a megjelenített mappa tartalma kerül a listába, almappákba nem lépünk be.
+      const uint8_t depth = 0;
 
       uint32_t limit = j.hardLimit ? j.hardLimit : 20000;
 
@@ -295,33 +367,55 @@ static void dlna_worker_task(void* ) {
         continue;
       }
 
-      // ===== APPEND =====
-      xSemaphoreTake(g_littlefsMux, portMAX_DELAY);
+      commit_tmp_as_append(j);
+    }
 
-      File out = LittleFS.open(PLAYLIST_DLNA_PATH, FILE_APPEND);
-      File in  = LittleFS.open(TMP_PATH, FILE_READ);
+    else if (j.type == DJ_BUILD_SEL || j.type == DJ_APPEND_SEL) {
+      const bool isAppend = (j.type == DJ_APPEND_SEL);
+      dlna_status_setBusy(j, isAppend ? "append" : "build");
 
-      if (out && in) {
-        if (out.size() > 0) out.print("\n");
-        while (in.available()) out.write(in.read());
-        ok = true;
-      } else {
-        ok = false;
-      }
+      String body = s_selBody;
+      s_selBody = String();
 
-      if (out) out.close();
-      if (in)  in.close();
-      LittleFS.remove(TMP_PATH);
-
-      xSemaphoreGive(g_littlefsMux);
-
-      if (!ok) {
-        dlna_status_setDone(j, false, 551, "append failed");
+      DlnaIndex idx;
+      uint32_t written = 0;
+      File f = LittleFS.open(TMP_PATH, "w");
+      if (!f) {
+        dlna_status_setDone(j, false, 500, "tmp open failed");
         continue;
       }
 
-      bumpPlaylistVer();
-      dlna_status_setDone(j, true, 0, "append ok");
+      int pos = 0;
+      while (pos < (int)body.length()) {
+        int eol = body.indexOf('\n', pos);
+        if (eol < 0) eol = body.length();
+        String line = body.substring(pos, eol);
+        pos = eol + 1;
+
+        int tab = line.indexOf('\t');
+        if (tab <= 0) continue;
+        String title = line.substring(0, tab);
+        String url = line.substring(tab + 1);
+        title.trim();
+        url.trim();
+        url.replace("\t", "");
+        if (!title.length() || !url.length()) continue;
+
+        String nice = idx.beautifyTitle(title);
+        nice.replace("\t", " ");
+        f.printf("%s\t%s\t0\n", nice.c_str(), url.c_str());
+        written++;
+      }
+      f.close();
+
+      if (written == 0) {
+        LittleFS.remove(TMP_PATH);
+        dlna_status_setDone(j, false, 422, "No tracks selected");
+        continue;
+      }
+
+      if (isAppend) commit_tmp_as_append(j);
+      else commit_tmp_as_build(j);
     }
 
 else if (j.type == DJ_INIT) {
