@@ -1135,7 +1135,11 @@ void NetServer::chunkedHtmlPage(const String &contentType, AsyncWebServerRequest
   });
 #endif
   response = request->beginChunkedResponse(contentType, chunkedHtmlPageCallback);
-  response->addHeader("Cache-Control", "max-age=31536000");
+  if (strstr(path, ".csv") != nullptr) {
+    response->addHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  } else {
+    response->addHeader("Cache-Control", "max-age=31536000");
+  }
  #ifdef USE_DLNA
   if (strcmp(path, PLAYLIST_DLNA_PATH) == 0) {
     response->addHeader("Content-Disposition", "attachment; filename=\"playlist_dlna.csv\"");

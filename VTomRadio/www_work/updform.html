@@ -1,0 +1,20 @@
+    <div id="logo" class="ls">
+    </div>
+    <div id="playerwrap" style="max-width: 100%; width: 100%;">
+      <div id="uploaderwrap" style="max-width: 100%; width: 100%;">
+        <div id="uploadstatus">Please choose firmware or LittleFS *.bin file</div>
+        <form id="updateform" method="POST" action="/update" enctype="multipart/form-data">
+          <div class="row">
+            <label for="uploadtype1"><input type="radio" id="uploadtype1" name="updatetarget" value="fw" checked /><span class="checkmark"></span> firmware</label>
+            <label for="uploadtype2"><input type="radio" id="uploadtype2" name="updatetarget" value="littlefs" /><span class="checkmark"></span> LittleFS</label>
+          </div>
+          <div class="row rowinput">
+            <input id="binfile" type="file" accept=".bin,.hex" name="update" />
+            <input type="button" class="fb" value="Update" onclick="doUpdate(this)">
+          </div>
+        </form>
+        <progress id="updateprogress" max="100" value="70" hidden></progress>
+        <a href="/" class="fb hl" id="update_cancel_button">Cancel</a>
+      </div><!--player-->
+    </div><!--playerwrap-->
+    <div id="copy">powered by <a target="_blank" href="https://github.com/VaraiTamas/VTomRadio.git">VTom Radio</a><span id="version"></span></div>
