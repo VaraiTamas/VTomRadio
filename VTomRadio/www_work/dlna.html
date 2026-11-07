@@ -764,7 +764,7 @@ async function runDlnaJob(kind, objectId, label, selBody = null){
         ? `/dlna/sel?mode=${kind}`
         : `/dlna/${kind}?objectId=${encodeURIComponent(objectId)}` + (scanStart ? `&scanStart=${scanStart}` : "");
       const opts = selBody !== null
-        ? { method: "POST", cache: "no-store", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: selBody }
+        ? { method: "POST", cache: "no-store", headers: { "Content-Type": "application/octet-stream" }, body: selBody }
         : { cache: "no-store" };
 
       // 429: az ESP még foglalt (pl. előző lista/böngészés), röviden újrapróbáljuk
