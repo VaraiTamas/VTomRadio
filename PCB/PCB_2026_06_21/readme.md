@@ -192,7 +192,166 @@ Az infravörös led tápjára párhuzamosan kell kötni egy 10μF elektrolit és
 | AO3401A | P-MOSFET SMD 30V (3.8A) | SOT-23 |
 | BC817-40.215 NPN SMD 45V/50V 0.5A 0.25W 100MHz | | SOT-23 |
 | LTV817STA1 | Optocsatoló 5kV tranzisztor kimenet 35V 50mA 80KHz 4p. SMD 
-| Csatlakozók| JST-XH | 2,54 |
+| Csatlakozók| JST-XH | 2,54 |  
+
+## A PCB -hez tartozó teljes "myoptions.h" tartalom.
+```cpp
+// clang-format off
+/* https://trip5.github.io/ehRadio_myoptions/generator.html
+   https://github.com/VaraiTamas/VTomRadio.git
+   Használat előtt olvasd el!!! - Read the before use !!!
+   https://github.com/VaraiTamas/VTomRadio/blob/main/README.md !!!
+
+  - A sor elején a // jel inaktívvá teszi a parancsot ezért a fordító nem veszi figyelembe! 
+    Ezzel tudod beállítani a te hardveredmek megfelelő összeállítást.
+  - The // sign at the beginning of the line makes the command inactive, so the compiler ignores it! 
+    This allows you to set the appropriate configuration for your hardware.
+*/
+
+#pragma once
+
+#ifndef ARDUINO_ESP32S3_DEV
+    #define ARDUINO_ESP32S3_DEV
+#endif
+
+/* Itt tudod beállítani a program nyelvét
+   You can set the program language here.
+   Supported languages: HU NL PL RU EN GR SK DE UA ES CZ. */
+#define LANGUAGE HU
+
+/* -- Névnapok megjelenítése -- Display name days --
+Supported languages: HU, PL, NL, GR, DE, CZ, SK (UA Local/namedays/namedays_UA.h is not filled in.) */
+#define NAMEDAYS_FILE HU
+
+#define USE_BUILTIN_LED false /* The RGB LED does not turn on.. */
+
+/* Arduino OTA Support */
+ #define USE_OTA true                    /* Enable OTA updates from Arduino IDE */
+// #define OTA_PASS "myotapassword12345"   /* OTA password for secure updates */
+
+/* HTTP Authentication */
+// #define HTTP_USER ""               /* HTTP basic authentication username */
+// #define HTTP_PASS ""               /* HTTP basic authentication password */
+
+/*----- LCD DISPLAY -----*/
+//#define DSP_MODEL DSP_ILI9341    // 320x240
+//#define DSP_MODEL DSP_ILI9488    // 480x320
+//#define DSP_MODEL DSP_ST7789     // 320x240
+#define DSP_MODEL DSP_ST7796       // 480x320
+
+/*----- LovyanGFX SPI bus speed -----*/
+/* Instabil kijelző, rossz vezetékelésnél használd csak. A használható értékek 24, 26, 28, 30, 32, 36 MHz */
+/* Unstable display, use only if wiring is bad. Usable values ​​are 24, 26, 28, 30, 32, 36 MHz */
+// #  define LGFX_LCD_FREQ_WRITE 24000000             // original: 40000000
+// #  define LGFX_LCD_FREQ_READ  10000000             // original: 16000000
+// #  define LGFX_TOUCH_SPI_FREQ   800000             // original: 2500000
+
+/*----- SCREEN ROTATION -----*/
+//#define DEFAULT_SCREEN_ROTATION 3  /* 0-3 */
+
+/*----- DISPLAY PIN SETS -----*/
+#define TFT_DC         9
+#define TFT_CS         10
+#define TFT_RST        -1
+#define BRIGHTNESS_PIN 14
+#define BRIGHTNESS_PWM_FREQ 5000
+/*
+   GPIO 11 - MOSI
+   GPIO 12 - CLK
+   GPIO 13 - MISO  // Ne csatlakoztasd a kijelzőhöz!!! - Do not connect to the LCD display!!!
+*/
+
+/*----- Touch SPI -----*/
+//#define TS_MODEL TS_MODEL_XPT2046
+//#define TS_CS    3
+
+/*----- Touch I2C -----*/
+#define TS_MODEL TS_MODEL_FT6X36
+// #define TS_MODEL TS_MODEL_AXS15231B
+
+ #define TS_SCL     7
+ #define TS_SDA     8
+ #define TS_INT    17 
+ #define TS_RST     1
+
+/*----- PCM5102A  DAC -----*/
+#define I2S_DOUT 4
+#define I2S_BCLK 5
+#define I2S_LRC  6
+// #define I2S_MCLK 0  /* CS4344 DAC: MCLK pin (PCM5102A-nál nem szükséges / not needed for PCM5102A) */
+//Szabad és MCLK-ra alkalmas jelöltek: GPIO 0, 7, 8, 15, 16, 17, 18, 45, 46
+
+/*----- ENCODER 1 ------*/
+#define ENC_BTNL 42 // S1
+#define ENC_BTNR 47 // S2
+#define ENC_BTNB 21 // KEY
+//#define ENC_INTERNALPULLUP	true
+//#define ENC_HALFQUARD true
+
+/*----- ENCODER 2 -----*/
+#define ENC2_BTNL 40 // S1
+#define ENC2_BTNR 41 // S2
+#define ENC2_BTNB 39 // KEY
+//#define ENC2_INTERNALPULLUP	true
+//#define ENC2_HALFQUARD       true
+
+/*----- CLOCK MODUL RTC DS3132 -----*/
+ #define RTC_SCL			     7
+ #define RTC_SDA			     8
+ #define RTC_MODULE DS3231
+
+/*----- REMOTE CONTROL INFRARED RECEIVER -----*/
+/*----- Alvásból ébresztéshez a GPIO 2 -őt kell használni -----*/
+/*----- To wake from sleep, you must use GPIO 2 -----*/
+#define IR_PIN 2
+#define IR_NEC_ONLY  // Build only NEC decoder sources from IRremoteESP8266 (faster/smaller build)
+
+/*----- Sleep functions -----*/
+/*----- A WAKE_PIN helyett mostantól két pin állítható be az ébresztéshez: WAKE_PIN1 és WAKE_PIN2 -----*/
+/*----- Így távirányítóval és egy másik gombbal is felébreszthető az eszköz. -----*/
+/*----- Instead of WAKE_PIN, you can now set two pins for wake-up: WAKE_PIN1 and WAKE_PIN2 -----*/
+/*----- This way, you can wake up the device with a remote control and another button. -----*/
+//#define BTN_MODE ENC_BTNB
+#define WAKE_PIN1 IR_PIN
+#define WAKE_PIN2 ENC_BTNB
+
+/*----- SD CARD -----*/
+ #define SDC_CS     18
+ #define SD_SPIPINS 12, 13, 11, SDC_CS  // SCK, MISO, MOSI, CS
+ #define SDSPISPEED 10000000
+
+/*----- Ezzel a beállítással nincs görgetés az időjárás sávon. -----*/
+/*----- With this setting there is no scrolling on the weather bar. -----*/
+#define WEATHER_FMT_SHORT
+
+/*----- Ezzel a beállítással a teljes időjárás jelentés megjelenik. -----*/
+/*----- With this setting, the full weather report is displayed. -----*/
+ #define EXT_WEATHER  true
+
+/*----- Ezzel a beállítással a szél sebessége km/h lesz. -----*/
+/*----- With this setting, the wind speed will be km/h. -----*/
+ #define WIND_SPEED_IN_KMH
+
+/*----- Az itt beállított pin vezérelheti egy audio erősítő tápellátását. Zenelejátszás közben a pin HIGH (magas) állapotban van ami meghúzza az
+erősítő tápellátását kapcsoló relét. Amikor nincs zenelejátszás (STOP vagy a hangerő 0), a pin LOW (alacsony) állapotban van.
+Ez a változás akkor történik, amikor a képernyővédő "while not playing" üzemmódban bekapcsol.
+This pin controls the amplifier's power supply. When music is playing, the pin is set to HIGH to control the relay.
+When music is not playing (stopped or volume is 0), the pin is set to LOW. This change occurs when the screensaver is running. -----*/
+// #define PWR_AMP 38
+
+/*----- Ha ez definiálva van a rádió indításakor, mindig az első csatorna lesz beállítva. -----*/
+/*----- If this is defined at radio startup, the first channel will always be set. -----*/
+//#define ALWAYS_START_FROM_FIRST
+
+/*----- by Zsolt Simon -----*/
+/*----- Tested on Synology NAS ----- */
+ #define USE_DLNA
+ #define dlnaHost "192.168.1.200"
+ #define dlnaIDX  21
+
+#define POWER_LED 38      // Button LED, DAC, RTC power on/off pin 
+
+```
 ### Ha támogatni szeretnéd a munkámat itt meghívhatsz egy kávéra!!!     
 <a href="https://buymeacoffee.com/vtom">
     <img src="../../images/buymeacoffee.png" width="200">
