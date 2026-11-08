@@ -60,7 +60,6 @@ const char  const_PlConnect[]    PROGMEM = "";
 const char  const_DlgVolume[]    PROGMEM = "VOLUMEN";
 const char    const_DlgLost[]    PROGMEM = "* PERDIDO *";
 const char  const_DlgUpdate[]    PROGMEM = "* ACTUALIZANDO *";
-const char const_DlgNextion[]    PROGMEM = "* NEXTION *";
 const char const_getWeather[]    PROGMEM = "";
 const char  const_waitForSD[]    PROGMEM = "ÍNDICE SD";
 

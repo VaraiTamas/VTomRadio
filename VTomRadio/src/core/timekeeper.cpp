@@ -10,9 +10,6 @@
 #include "rtcsupport.h"
 #include "../displays/tools/language.h"
 #include "../pluginsManager/pluginsManager.h"
-#ifdef USE_NEXTION
-#    include "../displays/nextion.h"
-#endif
 #if DSP_MODEL == DSP_DUMMY
 #    define DUMMYDISPLAY
 #endif
@@ -163,7 +160,7 @@ TimeKeeper::TimeKeeper() {
     forceTimeSync = true;
     _returnPlayerTime = _doAfterTime = 0;
     weatherBuf = NULL;
-#if (DSP_MODEL != DSP_DUMMY || defined(USE_NEXTION)) && !defined(HIDE_WEATHER)
+#if (DSP_MODEL != DSP_DUMMY) && !defined(HIDE_WEATHER)
     weatherBuf = (char*)malloc(sizeof(char) * WEATHER_STRING_L);
     memset(weatherBuf, 0, WEATHER_STRING_L);
 #endif
@@ -184,7 +181,7 @@ bool TimeKeeper::loop0() { // core0 (display)
         _last1s = currentTime;
 
 // #ifndef DUMMYDISPLAY
-#if !defined(DUMMYDISPLAY) || defined(USE_NEXTION)
+#if !defined(DUMMYDISPLAY)
 #    ifndef UPCLOCK_CORE1
         _upClock();
 #    endif
@@ -213,7 +210,7 @@ bool TimeKeeper::loop1() { // core1 (player)
     if (currentTime - _last1s >= 1000) { // 1sec
         _last1s = currentTime;
         //   pm.on_ticker();
-#if !defined(DUMMYDISPLAY) || defined(USE_NEXTION)
+#if !defined(DUMMYDISPLAY)
 #    ifdef UPCLOCK_CORE1
         _upClock();
 #    endif
@@ -254,7 +251,7 @@ bool TimeKeeper::loop1() { // core1 (player)
             _restartBackoffMs = 5000;
         }
     }
-#if defined(DUMMYDISPLAY) && !defined(USE_NEXTION)
+#if defined(DUMMYDISPLAY)
     return true;
 #endif
     // Sync weather & time
@@ -436,7 +433,7 @@ void TimeKeeper::weatherTask() {
 }
 
 bool _getWeather() {
-#if (DSP_MODEL != DSP_DUMMY || defined(USE_NEXTION)) && !defined(HIDE_WEATHER)
+#if (DSP_MODEL != DSP_DUMMY) && !defined(HIDE_WEATHER)
     static AsyncClient* weatherClient = NULL;
     static const char*  host = "api.openweathermap.org";
     if (weatherClient) { return false; }
@@ -549,37 +546,6 @@ bool _getWeather() {
 
                         if (!result) { return; }
 
-#    ifdef USE_NEXTION
-                        nextion.putcmdf("press_txt.txt=\"%dmm\"", press);
-                        nextion.putcmdf("hum_txt.txt=\"%d%%\"", hum);
-                        char cmd[30];
-                        snprintf(cmd, sizeof(cmd) - 1, "temp_txt.txt=\"%.1f\"", tempf);
-                        nextion.putcmd(cmd);
-                        int iconofset;
-                        if (strstr(icon, "01") != NULL)
-                            iconofset = 0;
-                        else if (strstr(icon, "02") != NULL)
-                            iconofset = 1;
-                        else if (strstr(icon, "03") != NULL)
-                            iconofset = 2;
-                        else if (strstr(icon, "04") != NULL)
-                            iconofset = 3;
-                        else if (strstr(icon, "09") != NULL)
-                            iconofset = 4;
-                        else if (strstr(icon, "10") != NULL)
-                            iconofset = 5;
-                        else if (strstr(icon, "11") != NULL)
-                            iconofset = 6;
-                        else if (strstr(icon, "13") != NULL)
-                            iconofset = 7;
-                        else if (strstr(icon, "50") != NULL)
-                            iconofset = 8;
-                        else
-                            iconofset = 9;
-                        nextion.putcmd("cond_img.pic", 50 + iconofset);
-                        nextion.weatherVisible(1);
-#    endif
-
                         Serial.printf("##WEATHER###: description: %s, temp:%.1f C, pressure:%dmmHg, humidity:%d%%, wind: %d\n", desc, tempf, press, hum, (int)(wind_deg / 22.5));
 #    ifdef WEATHER_FMT_SHORT
                         sprintf(timekeeper.weatherBuf, LANG::weatherFmt, tempf, press, hum);
@@ -607,7 +573,7 @@ bool _getWeather() {
     }
 
     return true;
-#endif // if (DSP_MODEL!=DSP_DUMMY || defined(USE_NEXTION)) && !defined(HIDE_WEATHER)
+#endif // if DSP_MODEL != DSP_DUMMY && !defined(HIDE_WEATHER)
     return false;
 }
 

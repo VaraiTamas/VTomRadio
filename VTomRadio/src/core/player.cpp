@@ -7,10 +7,6 @@
 #include "timekeeper.h"
 #include "../displays/tools/language.h"
 #include "../pluginsManager/pluginsManager.h"
-#ifdef USE_NEXTION
-  #include "../displays/nextion.h"
-#endif
-
 namespace {
 constexpr uint8_t VOLUME_CURVE_POINTS = 22;
 constexpr float   VOLUME_CURVE_MIN_DB = -60.0f;
@@ -150,9 +146,6 @@ void Player::_stop(bool alreadyStopped) {
   }
   config.station.bitrate = 0;
   config.setBitrateFormat(BF_UNKNOWN);
-#ifdef USE_NEXTION
-  nextion.bitrate(config.station.bitrate);
-#endif
   if (!alreadyStopped) {
     stopSong();
   }

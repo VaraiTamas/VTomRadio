@@ -327,7 +327,7 @@ class Config {
     bool    initNetwork();
     bool    saveWifi();
     void    setTimeConf();
-    bool    saveWifiFromNextion(const char* post);
+    bool    saveWifiCredentials(const char* post);
     bool    isSmartStartEnabled() const { return store.smartstart == 1; }
     void    setSmartStartEnabled(bool enabled);
     void    setVuBidirectional(bool val);

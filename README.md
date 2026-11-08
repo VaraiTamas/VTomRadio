@@ -131,7 +131,7 @@ Itt olvashatsz róla bővebben: [PCB_2026_06_21](PCB/PCB_2026_06_21/readme.md)
 </a> 
 
 ## v0.2.6
-- DLNA hibajavítás FLAC fájllista összeállításnál.
+- DLNA hibajavítás a fájllista összeállításnál.
 ## v0.2.5
 - Playlist a böngésző gyorsítótárából olvasta az exportálandó adatokat és nem a fizikai fájlt exportálta, hiba javítása.   
 

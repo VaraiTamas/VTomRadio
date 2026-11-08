@@ -61,7 +61,6 @@ const char  const_PlConnect[]    PROGMEM = "--> pripája sa";
 const char  const_DlgVolume[]    PROGMEM = "hlasitosť";
 const char    const_DlgLost[]    PROGMEM = "* stratený signál *";
 const char  const_DlgUpdate[]    PROGMEM = "* obnova *";
-const char const_DlgNextion[]    PROGMEM = "* NEXTION *";
 const char const_getWeather[]    PROGMEM = "";
 const char  const_waitForSD[]    PROGMEM = "INDEX SD";
 

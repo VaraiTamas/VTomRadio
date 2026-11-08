@@ -1153,7 +1153,7 @@ void NetServer::chunkedHtmlPage(const String &contentType, AsyncWebServerRequest
 #else
   #define DSP_CAN_FLIPPED false
 #endif
-#if !defined(HIDE_WEATHER) && (!defined(DUMMYDISPLAY) && !defined(USE_NEXTION))
+#if !defined(HIDE_WEATHER) && !defined(DUMMYDISPLAY)
   #define SHOW_WEATHER true
 #else
   #define SHOW_WEATHER false
@@ -1206,7 +1206,7 @@ void NetServer::processQueue() {
       }
       case GETACTIVE:
       {
-        bool dbgact = false, nxtn = false;
+        bool dbgact = false;
         const bool systemUiAvailable = (network.status == CONNECTED || network.status == SOFT_AP);
         //String act = F("\"group_wifi\",");
         nsBuf[0] = '\0';
@@ -1219,20 +1219,13 @@ void NetServer::processQueue() {
           if (BRIGHTNESS_PIN != 255 || DSP_CAN_FLIPPED || dbgact) {
             APPEND_GROUP("group_display");
           }
-#ifdef USE_NEXTION
-          APPEND_GROUP("group_nextion");
-          if (!SHOW_WEATHER || dbgact) {
-            APPEND_GROUP("group_weather");
-          }
-          nxtn = true;
-#endif
 #if defined(LCD_I2C) || defined(DSP_OLED)
           APPEND_GROUP("group_oled");
 #endif
 #if !defined(HIDE_VU) && !defined(DUMMYDISPLAY)
           APPEND_GROUP("group_vu");
 #endif
-          if (BRIGHTNESS_PIN != 255 || nxtn || dbgact) {
+          if (BRIGHTNESS_PIN != 255 || dbgact) {
             APPEND_GROUP("group_brightness");
           }
           if (DSP_CAN_FLIPPED || dbgact) {
@@ -2084,7 +2077,7 @@ void handleIndex(AsyncWebServerRequest *request) {
         AsyncWebServerResponse *response = request->beginResponse(200, "text/html", "<html><head><meta http-equiv='refresh' content='10;url=/'></head><body style='background:#000;color:#4b95d6;text-align:center;padding:50px;font-family:sans-serif;'><h2>Wi-Fi saved. Restarting...</h2></body></html>");
         response->addHeader("Connection", "close");
         request->send(response);
-        config.saveWifiFromNextion(netserver.nsBuf);
+        config.saveWifiCredentials(netserver.nsBuf);
         return;
       }
       request->redirect("/");

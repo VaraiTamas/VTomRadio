@@ -81,10 +81,6 @@ Supported languages: HU, PL, NL, GR, DE, CZ, SK (UA Local/namedays/namedays_UA.h
  #define TS_INT    17 
  #define TS_RST     1
 
-/*----- NEXTION DISPLAY serial port -----*/
-// #define NEXTION_RX			15
-// #define NEXTION_TX			16
-
 /*----- PCM5102A  DAC -----*/
 #define I2S_DOUT 4
 #define I2S_BCLK 5

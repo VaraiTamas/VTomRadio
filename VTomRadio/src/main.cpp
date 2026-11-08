@@ -14,9 +14,6 @@
 
 #include "core/optionschecker.h"
 #include "core/timekeeper.h"
-#ifdef USE_NEXTION
-#    include "displays/nextion.h"
-#endif
 #include "core/audiohandlers.h" //"audio_change"
 #ifdef USE_DLNA                 // DLNA mod
 #    include "dlna/dlna_service.h"

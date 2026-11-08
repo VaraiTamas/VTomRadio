@@ -60,7 +60,6 @@ const char  const_PlConnect[]    PROGMEM = "[з'єднання]";
 const char  const_DlgVolume[]    PROGMEM = "ГУЧНІСТЬ";
 const char    const_DlgLost[]    PROGMEM = "ВИМКНЕНО";
 const char  const_DlgUpdate[]    PROGMEM = "ОНОВЛЕННЯ";
-const char const_DlgNextion[]    PROGMEM = "NEXTION";
 const char const_getWeather[]    PROGMEM = "";
 const char  const_waitForSD[]    PROGMEM = "ІНДЕКС SD";
 

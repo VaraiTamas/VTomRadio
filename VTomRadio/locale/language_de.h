@@ -60,7 +60,6 @@ const char const_PlConnect[] PROGMEM = "[verbinden]";
 const char const_DlgVolume[] PROGMEM = "Lautstärke";
 const char const_DlgLost[] PROGMEM = "* Signal verloren *";
 const char const_DlgUpdate[] PROGMEM = "* Aktualisierung *";
-const char const_DlgNextion[] PROGMEM = "* NEXTION *";
 const char const_getWeather[] PROGMEM = "";
 const char const_waitForSD[] PROGMEM = "INDEX SD";
 

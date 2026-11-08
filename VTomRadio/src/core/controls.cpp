@@ -213,13 +213,13 @@ void encodersLoop(myEncoder* enc, bool first) {
     if (display.mode() == LOST) { return; }
     int8_t delta = enc->encoderChanged();
     if (delta == 0) { return; }
-#    if !defined(DUMMYDISPLAY) || defined(USE_NEXTION)
+#    if !defined(DUMMYDISPLAY)
     if (display.mode() == INPUTSELECT) {
         display.moveInputSelect(delta);
         return;
     }
 #    endif
-#    if defined(DUMMYDISPLAY) && !defined(USE_NEXTION)
+#    if defined(DUMMYDISPLAY)
     // ===== Dummy display =====
     uint8_t btnState = digitalRead(first ? ENC_BTNB : ENC2_BTNB);
     bool    volumeMode = first ? btnState : !btnState;
@@ -580,7 +580,7 @@ void onBtnLongPressStart(int id) {
         }
         case EVT_BTNCENTER:
         case EVT_ENCBTNB: {
-#if defined(DUMMYDISPLAY) && !defined(USE_NEXTION)
+#if defined(DUMMYDISPLAY)
             break;
 #endif
             if (!useIndependentEncoders()) {
@@ -589,7 +589,7 @@ void onBtnLongPressStart(int id) {
             break;
         }
         case EVT_ENC2BTNB: {
-#if defined(DUMMYDISPLAY) && !defined(USE_NEXTION)
+#if defined(DUMMYDISPLAY)
             break;
 #endif
             if (!useIndependentEncoders()) {
@@ -658,7 +658,7 @@ void controlsEvent(bool toRight, int8_t volDelta) {
         display.putRequest(NEWMODE, PLAYER);
     }
     if (display.mode() != STATIONS) {
-#if !defined(DUMMYDISPLAY) || defined(USE_NEXTION)
+#if !defined(DUMMYDISPLAY)
         Serial.println("controlsEvent: volume change");
         display.putRequest(NEWMODE, VOL); // Hangerő képernyőre vált.
 #endif

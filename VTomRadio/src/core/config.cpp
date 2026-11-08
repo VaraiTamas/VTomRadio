@@ -13,9 +13,6 @@
 #ifdef USE_SD
 #    include "sdmanager.h"
 #endif
-#ifdef USE_NEXTION
-#    include "../displays/nextion.h"
-#endif
 #include <cstddef>
 #include <cctype>
 #include <algorithm>
@@ -1988,11 +1985,11 @@ bool Config::parseSsid(const char* line, char* ssid, char* pass) {
     return strlen(ssid) > 0;
 }
 
-bool Config::saveWifiFromNextion(const char* post) {
+bool Config::saveWifiCredentials(const char* post) {
     if (!LittleFS.exists("/data")) { LittleFS.mkdir("/data"); }
     File file = LittleFS.open(SSIDS_PATH, "w");
     if (!file) {
-        Serial.printf("[WIFI] saveWifiFromNextion: cannot open %s for write\n", SSIDS_PATH);
+        Serial.printf("[WIFI] saveWifiCredentials: cannot open %s for write\n", SSIDS_PATH);
         return false;
     } else {
         file.println(post);
@@ -2052,17 +2049,6 @@ void Config::setBrightness(bool dosave) {
         saveValue(&store.brightness, store.brightness, false, true);
         saveValue(&store.dspon, store.dspon, true, true);
     }
-#ifdef USE_NEXTION
-    nextion.wake();
-    char cmd[15];
-    snprintf(cmd, 15, "dims=%d", store.brightness);
-    nextion.putcmd(cmd);
-    if (!store.dspon) { store.dspon = true; }
-    if (dosave) {
-        saveValue(&store.brightness, store.brightness, false, true);
-        saveValue(&store.dspon, store.dspon, true, true);
-    }
-#endif
 }
 
 void Config::setDspOn(bool dspon, bool saveval) {
@@ -2070,13 +2056,6 @@ void Config::setDspOn(bool dspon, bool saveval) {
         store.dspon = dspon;
         saveValue(&store.dspon, store.dspon, true, true);
     }
-#ifdef USE_NEXTION
-    if (!dspon) {
-        nextion.sleep();
-    } else {
-        nextion.wake();
-    }
-#endif
     if (!dspon) {
 #if BRIGHTNESS_PIN != 255
         analogWrite(BRIGHTNESS_PIN, 0);
@@ -2093,10 +2072,6 @@ void Config::setDspOn(bool dspon, bool saveval) {
 void Config::doSleep() {
     if (BRIGHTNESS_PIN != 255) { analogWrite(BRIGHTNESS_PIN, 0); }
     display.deepsleep();
-#ifdef USE_NEXTION
-    nextion.sleep();
-#endif
-
     uint64_t mask = 0;
 
 #if WAKE_PIN1 >= 0 && WAKE_PIN1 < 64
@@ -2128,10 +2103,6 @@ void Config::doSleepW() {
     gpio_hold_en((gpio_num_t)BRIGHTNESS_PIN);
     gpio_deep_sleep_hold_en();
     display.deepsleep();
-
-#ifdef USE_NEXTION
-    nextion.sleep();
-#endif
 
     uint64_t mask = 0;
 

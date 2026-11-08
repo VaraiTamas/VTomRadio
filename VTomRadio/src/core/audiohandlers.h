@@ -5,10 +5,6 @@
 #include "../displays/tools/language.h"
 #include "audiohelpers.h"
 
-#ifdef USE_NEXTION
-extern decltype(nextion) nextion;  // Nextion kijelző objektum (extern)
-#endif
-
 String currentArtist = "";
 String currentTitle = "";
 uint16_t currentStationId = static_cast<uint16_t>(-1);
@@ -379,9 +375,6 @@ void audio_bitrate(const char *info) {
   }
   config.station.bitrate = br;
   display.putRequest(DBITRATE);
-#ifdef USE_NEXTION
-  nextion.bitrate(config.station.bitrate);
-#endif
   netserver.requestOnChange(BITRATE, 0);
 }
 
@@ -712,4 +705,3 @@ void _utf8_clean(char *s) {
   }
   *out = '\0';
 }
-
