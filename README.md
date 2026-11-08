@@ -130,6 +130,8 @@ Itt olvashatsz róla bővebben: [PCB_2026_06_21](PCB/PCB_2026_06_21/readme.md)
     <img src="images/buymeacoffee.png" width="200">
 </a> 
 
+## v0.2.7
+- NEXTION kijelző támogatás megszűntetve.
 ## v0.2.6
 - DLNA hibajavítás a fájllista összeállításnál.
 ## v0.2.5
